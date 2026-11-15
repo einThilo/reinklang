@@ -224,10 +224,28 @@ function init() {
     if (Number(pitchInput.value) !== state.a4Frequency) pitchInput.value = state.a4Frequency;
   }
 
-  pitchInput.addEventListener("input", event => {
-    const val = Number(event.target.value);
-    if (!Number.isNaN(val)) setState("a4Frequency", val);
+  // Der Stimmton wird erst beim Abschicken übernommen (Enter oder Tipp außerhalb des Felds);
+  // ungültige Eingaben springen auf den bisherigen Wert zurück.
+  pitchInput.addEventListener("change", () => {
+    const val = Number(pitchInput.value);
+    if (pitchInput.value !== "" && val > 0) setState("a4Frequency", val);
+    pitchInput.value = state.a4Frequency;
   });
+
+  pitchInput.addEventListener("keydown", event => {
+    if (event.key === "Enter") pitchInput.blur();
+  });
+
+  // Ein Tipp außerhalb des Felds nimmt den Cursor heraus, damit die Bildschirmtastatur zu bleibt.
+  // Nötig, weil die Bedienelemente das normale Verhalten beim Antippen unterdrücken.
+  document.addEventListener("pointerdown", event => {
+    if (document.activeElement !== pitchInput || event.target === pitchInput) return;
+    // +/− rechnen vom gültigen Stimmton; eine nicht abgeschickte Eingabe wird dann verworfen.
+    if (btnPitchUp.contains(event.target) || btnPitchDown.contains(event.target)) {
+      pitchInput.value = state.a4Frequency;
+    }
+    pitchInput.blur();
+  }, { capture: true });
 
   // Ruft `action` beim Drücken sofort auf und wiederholt sie, solange der Button gedrückt bleibt.
   function addRepeatOnHold(button, action) {
@@ -246,8 +264,8 @@ function init() {
     ["pointerup", "pointercancel", "pointerleave"].forEach(type => button.addEventListener(type, stop));
   }
 
-  addRepeatOnHold(btnPitchDown, () => setState("a4Frequency", Number(pitchInput.value) - 1));
-  addRepeatOnHold(btnPitchUp, () => setState("a4Frequency", Number(pitchInput.value) + 1));
+  addRepeatOnHold(btnPitchDown, () => setState("a4Frequency", Math.max(1, state.a4Frequency - 1)));
+  addRepeatOnHold(btnPitchUp, () => setState("a4Frequency", state.a4Frequency + 1));
 
   mainKeyboard.onPointerNote(event => {
     audioEngine.ensureStarted();
