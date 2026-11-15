@@ -1,0 +1,323 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #222;
+  font-family: sans-serif;
+  touch-action: none;
+}
+
+#harmony-keyboard {
+  background: #eee;
+  position: relative;
+  min-width: 0;
+}
+
+#harmony-auto {
+  background: #222;
+  display: flex;
+  flex-direction: column;
+  border-right: 4px solid #000;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+}
+
+.auto-btn {
+  flex: 1 1 0%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-left: 10px;
+  color: #aaa;
+  font-weight: bold;
+  font-size: clamp(10px, 2vmin, 16px);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition: background 0.15s, color 0.15s;
+  border-bottom: 2px solid #111;
+  box-sizing: border-box;
+}
+
+.auto-btn:last-child {
+  border-bottom: none;
+}
+
+.auto-btn.selected {
+  background: #d22;
+  color: #fff;
+}
+
+canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Layout containers and base blocks */
+#sound, #sustain-release, #tone, #edit, .transpose-group, #keyboard-tools, .row, .column {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+}
+
+#sound, #tone, #edit, .transpose-group, #keyboard-tools {
+  background: #eee;
+  box-sizing: border-box;
+}
+
+#sound {
+  flex-direction: column;
+  padding: 6px;
+  gap: 6px;
+}
+
+#pitch-sustain-release {
+  display: flex;
+  flex-direction: column;
+  background: #eee;
+  box-sizing: border-box;
+  min-height: 0;
+  min-width: 0;
+}
+
+.tone-input-group {
+  flex: 0 1 auto;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+}
+
+/* Container for vertical button stack */
+.step-control {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.step-control button {
+  font-size: clamp(12px, 2.5vmin, 20px);
+  cursor: pointer;
+}
+
+/* Ensure the pitch input does not grow too large */
+.tone-input-group input {
+  flex: 1 1 auto;
+  width: 4ch;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+#tone {
+  flex-direction: column;
+}
+
+/* Sound panel layout distribution */
+.sound-control-group {
+  flex: 1 1 0%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.tuning-use-button {
+  flex: 1 1 0%;
+  min-height: 0;
+  color: #000;
+}
+
+.sound-control-group label {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: clamp(12px, 2vmin, 20px);
+}
+
+.sound-control-group select {
+  width: 100%;
+  box-sizing: border-box;
+  flex: 1 0 auto;
+  min-height: 0;
+}
+
+/* Form controls and input groups */
+#tuning-select, #instrument-select {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  font-size: clamp(16px, 2.2vmin, 20px);
+}
+
+/* Horizontal collapsing for labels and values under tight space */
+.transpose-label,
+#trans-val {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.transpose-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #444;
+  font-size: clamp(12px, 2vmin, 16px);
+  height: 100%;
+}
+
+.tone-btn {
+  font-size: clamp(12px, 2.5vmin, 20px);
+  flex: 1 1 25%;
+  min-width: 0;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* Interactive UI elements and typography */
+.sustain-release-half,
+.tuning-use-button,
+#edit button,
+.tone-btn,
+#keyboard-tools button,
+.tone-input-group input,
+#trans-val {
+  font-size: clamp(12px, 2.5vmin, 20px);
+  font-weight: bold;
+}
+
+.sustain-release-half,
+.tuning-use-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.sustain-release-half {
+  width: 100%;
+  box-sizing: border-box;
+  flex: 1 1 auto;
+}
+
+.tuning-use-button.selected,
+.sustain-release-half.selected {
+  background: #d22;
+}
+
+/* Sidebar and tool panels alignment */
+#edit, .transpose-group {
+  justify-content: center;
+  align-items: center;
+}
+
+#edit button {
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.transpose-group {
+  flex-direction: row;
+  width: 100%;
+  height: 100%;
+}
+
+#keyboard-tools {
+  background: #888;
+  justify-content: center;
+  align-content: stretch;
+  flex-wrap: wrap;
+}
+
+#keyboard-tools button {
+  flex: 1 1 10%;
+  cursor: pointer;
+}
+
+/* Piano keyboard interface rendering */
+.keyboard {
+  height: 100%;
+  width: 100%;
+  position: relative;
+  background: #111;
+  user-select: none;
+  touch-action: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.key {
+  position: absolute;
+  box-sizing: border-box;
+}
+
+.key.held.white { background: linear-gradient(to bottom, #c88 0%, #a44 100%); }
+.key.held.black { background: linear-gradient(to bottom, #a44 0%, #600 100%); }
+
+.key.white {
+  background: linear-gradient(to bottom, #fff 0%, #ddd 100%);
+  border: 1px solid #999;
+  border-radius: 0 0 6px 6px;
+  z-index: 1;
+}
+
+.key.black {
+  background: linear-gradient(to bottom, #333 0%, #000 100%);
+  border-radius: 0 0 6px 6px;
+  z-index: 2;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+}
+
+.key-label {
+  position: absolute;
+  bottom: 4px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 10px;
+  pointer-events: none;
+}
+
+.key.black .key-label { color: #ccc; }
+.key.active.white { background: linear-gradient(to bottom, #bff 0%, #7cc 100%); }
+.key.active.black { background: linear-gradient(to bottom, #6aa 0%, #355 100%); }
+
+/* Layout grid flex modifiers */
+.row { flex-direction: row; width: 100%; height: 100%; }
+.column { flex-direction: column; width: 100%; height: 100%; }
+
+.weight-1 { flex: 1 1 0; }
+.weight-2 { flex: 2 1 0; }
+.weight-3 { flex: 3 1 0; }
+.weight-4 { flex: 4 1 0; }
+.weight-5 { flex: 5 1 0; }
+.weight-6 { flex: 6 1 0; }
+.weight-7 { flex: 7 1 0; }
+.weight-8 { flex: 8 1 0; }
+.weight-9 { flex: 9 1 0; }
+.weight-10 { flex: 10 1 0; }
+
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  .tone-input-group input:focus {
+    font-size: 16px !important;
+  }
+}
