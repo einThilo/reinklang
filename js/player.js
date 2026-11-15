@@ -1,3 +1,5 @@
+import { state, setState, onStateChange } from "./state.js";
+
 export class SynthController {
   constructor(keyboard, audioEngine, frequencyOf) {
     this.keyboard = keyboard;
@@ -106,4 +108,25 @@ export function pickAutoRoot(mode, activeNotes, previousCount) {
     return activeNotes[0];
   }
   return null;
+}
+
+// Verbindet die Grundton-Automatik mit einem SynthController: Bei jeder Änderung der
+// klingenden Töne und bei jedem Wechsel des Harmoniemodus wird die Regel befragt.
+export function connectAutoRoot(synth) {
+  let previousCount = 0;
+
+  function update() {
+    const activeNotes = Array.from(synth.activeNotes);
+    const newRoot = pickAutoRoot(state.harmonyMode, activeNotes, previousCount);
+
+    if (newRoot !== null) setState("rootMidi", newRoot);
+
+    previousCount = activeNotes.length;
+  }
+
+  synth.onNotesChanged = update;
+
+  onStateChange(key => {
+    if (key === "harmonyMode") update();
+  });
 }

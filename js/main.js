@@ -2,7 +2,8 @@ import { Keyboard, clamp } from "./keyboard.js";
 import { INSTRUMENTS } from "./instruments.js";
 import { TUNINGS, midiToFrequency } from "./tuning.js";
 import { AudioEngine } from "./audio.js";
-import { SynthController, pickAutoRoot } from "./player.js";
+import { SynthController, connectAutoRoot } from "./player.js";
+import { state, setState, onStateChange } from "./state.js";
 
 document.addEventListener("DOMContentLoaded", init);
 
@@ -104,29 +105,23 @@ function init() {
 
   const tuningSettings = {
     a4Frequency: 440,
-    octaveRatio: 2,
-    tuningMode: "thilo",
-    tuningRootMidi: 60
+    octaveRatio: 2
   };
 
-  const frequencyOf = midi => midiToFrequency(midi, tuningSettings);
+  const frequencyOf = midi => midiToFrequency(midi, {
+    ...tuningSettings,
+    tuningMode: state.useTuning ? state.tuningMode : "equal",
+    tuningRootMidi: state.rootMidi
+  });
 
   function setTuningSetting(key, value) {
     tuningSettings[key] = value;
     audioEngine.retuneAllVoices(frequencyOf);
   }
 
-  function setTuningMode(mode) {
-    if (!TUNINGS[mode]) return;
-    setTuningSetting("tuningMode", mode);
-  }
-
-  function setTuningRootMidi(midi) {
-    setTuningSetting("tuningRootMidi", Math.max(0, Math.min(127, Math.round(midi))));
-  }
-
   const synth = new SynthController(mainKeyboard, audioEngine, frequencyOf);
   const keyboardRange = new KeyboardRangeController(mainKeyboard, synth);
+  connectAutoRoot(synth);
 
   document.querySelectorAll("#keyboard-tools button").forEach(btn => {
     btn.addEventListener("pointerdown", event => {
@@ -135,52 +130,33 @@ function init() {
     });
   });
 
-  let currentHarmonyRoot = 60;
-  
-function setHarmonyRoot(midi) {
-    currentHarmonyRoot = midi;
-    setTuningRootMidi(currentHarmonyRoot);
-    
+  function updateRootHighlight() {
     const start = harmonyKeyboard.startMidi;
-    const displayMidi = start + (((midi - start) % 12) + 12) % 12;
-    
+    const displayMidi = start + (((state.rootMidi - start) % 12) + 12) % 12;
+
     harmonyKeyboard.highlightHarmonyKey(displayMidi);
   }
-  
-  setHarmonyRoot(currentHarmonyRoot);
 
-  let harmonyMode = "lowest";
-  let activeNoteCount = 0;
+  updateRootHighlight();
+
   const autoBtns = document.querySelectorAll(".auto-btn");
 
-  function updateHarmonyAuto() {
-    const activeNotes = Array.from(synth.activeNotes);
-    const newRoot = pickAutoRoot(harmonyMode, activeNotes, activeNoteCount);
-
-    if (newRoot !== null) setHarmonyRoot(newRoot);
-
-    activeNoteCount = activeNotes.length;
-  }
-
-  synth.onNotesChanged = updateHarmonyAuto;
-
-  function setHarmonyMode(mode) {
-    harmonyMode = mode;
-    autoBtns.forEach(btn => btn.classList.toggle("selected", btn.dataset.mode === mode));
-    updateHarmonyAuto();
+  function updateHarmonyModeButtons() {
+    autoBtns.forEach(btn => btn.classList.toggle("selected", btn.dataset.mode === state.harmonyMode));
   }
 
   autoBtns.forEach(btn => {
     btn.addEventListener("pointerdown", event => {
       event.preventDefault();
-      setHarmonyMode(btn.dataset.mode);
+      setState("harmonyMode", btn.dataset.mode);
     });
   });
+  updateHarmonyModeButtons();
 
   harmonyKeyboard.onPointerNote(event => {
     if (event.type === "down") {
-      setHarmonyMode("manual");
-      setHarmonyRoot(event.midi);
+      setState("harmonyMode", "manual");
+      setState("rootMidi", event.midi);
     }
   });
 
@@ -199,7 +175,6 @@ function setHarmonyRoot(midi) {
 
   const tuningSelect = document.getElementById("tuning-select");
   const tuningButton = document.getElementById("tuning-use-button");
-  let useTuningEnabled = false;
 
   Object.entries(TUNINGS).forEach(([key, tuning]) => {
     const option = document.createElement("option");
@@ -208,25 +183,28 @@ function setHarmonyRoot(midi) {
     tuningSelect.appendChild(option);
   });
 
-  tuningSelect.value = tuningSettings.tuningMode;
-
-  function updateTuningMode() {
-    if (useTuningEnabled) {
-      setTuningMode(tuningSelect.value);
-      tuningButton.classList.add("selected");
-    } else {
-      setTuningMode("equal");
-      tuningButton.classList.remove("selected");
-    }
+  function updateTuningControls() {
+    tuningSelect.value = state.tuningMode;
+    tuningButton.classList.toggle("selected", state.useTuning);
   }
 
-  tuningSelect.addEventListener("change", updateTuningMode);
+  tuningSelect.addEventListener("change", () => {
+    setState("tuningMode", tuningSelect.value);
+  });
   tuningButton.addEventListener("pointerdown", event => {
     event.preventDefault();
-    useTuningEnabled = !useTuningEnabled;
-    updateTuningMode();
+    setState("useTuning", !state.useTuning);
   });
-  updateTuningMode();
+  updateTuningControls();
+
+  onStateChange(key => {
+    if (key === "rootMidi" || key === "tuningMode" || key === "useTuning") {
+      audioEngine.retuneAllVoices(frequencyOf);
+    }
+    if (key === "rootMidi") updateRootHighlight();
+    if (key === "harmonyMode") updateHarmonyModeButtons();
+    if (key === "tuningMode" || key === "useTuning") updateTuningControls();
+  });
 
   const btnSustain = document.getElementById("btn-sustain");
   const btnRelease = document.getElementById("btn-release");
@@ -280,14 +258,6 @@ function setHarmonyRoot(midi) {
     synth.handlePointerEvent(event.type, event.midi);
   });
 
-  harmonyKeyboard.onPointerNote(event => {
-    if (event.type === "down") {
-      currentHarmonyRoot = event.midi;
-      harmonyKeyboard.highlightHarmonyKey(event.midi);
-      setTuningRootMidi(currentHarmonyRoot);
-    }
-  });
-
   let currentTranspose = 0;
   const transValDisplay = document.getElementById("trans-val");
   const btnTransDown = document.getElementById("btn-trans-down");
@@ -303,7 +273,8 @@ function setHarmonyRoot(midi) {
     harmonyKeyboard.transposeOffset = currentTranspose;
     harmonyKeyboard.setRange({ startMidi: 60 + currentTranspose, keyCount: 12 });
     
-    setHarmonyRoot(currentHarmonyRoot + diff);
+    setState("rootMidi", clamp(state.rootMidi + diff, 0, 127));
+    updateRootHighlight();
     
     synth.syncAllVisuals();
   }
