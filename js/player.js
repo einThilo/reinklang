@@ -76,8 +76,11 @@ export class SynthController {
       if (!this.isSounding[midi] || forceTrigger) {
         this.isSounding[midi] = true;
         this.activeNotes.add(midi);
+        // Erst melden, dann anschlagen: Die Grundton-Automatik legt so den Grundton fest,
+        // bevor die Frequenz des neuen Tons berechnet wird. Deshalb hier kein `changed`,
+        // sonst würde der Aufrufer ein zweites Mal melden.
+        this.onNotesChanged();
         this.audioEngine.noteOn(midi, this.frequencyOf(midi));
-        changed = true;
       }
     } else if (this.isSounding[midi]) {
       this.isSounding[midi] = false;
