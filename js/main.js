@@ -101,7 +101,7 @@ function init() {
     id: "harmony"
   });
 
-  const audioEngine = new AudioEngine();
+  const audioEngine = new AudioEngine(state.instrument);
 
   const frequencyOf = midi => midiToFrequency(midi, {
     a4Frequency: state.a4Frequency,
@@ -158,9 +158,9 @@ function init() {
     instrumentSelect.appendChild(option);
   }
   
-  instrumentSelect.value = audioEngine.currentInstrument;
-  instrumentSelect.addEventListener("change", event => {
-    audioEngine.setInstrument(event.target.value);
+  instrumentSelect.value = state.instrument;
+  instrumentSelect.addEventListener("change", () => {
+    setState("instrument", instrumentSelect.value);
   });
 
   const tuningSelect = document.getElementById("tuning-select");
@@ -196,6 +196,10 @@ function init() {
     if (key === "tuningMode" || key === "useTuning") updateTuningControls();
     if (key === "a4Frequency") updatePitchInput();
     if (key === "transpose") applyTranspose(value - previous);
+    if (key === "instrument") {
+      audioEngine.setInstrument(value);
+      instrumentSelect.value = value;
+    }
   });
 
   const btnSustain = document.getElementById("btn-sustain");

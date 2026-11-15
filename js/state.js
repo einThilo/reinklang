@@ -5,7 +5,8 @@ export const state = {
   tuningMode: "thilo",
   useTuning: false,
   a4Frequency: 440,
-  transpose: 0
+  transpose: 0,
+  instrument: "piano"
 };
 
 const listeners = [];

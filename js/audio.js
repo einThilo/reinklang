@@ -1,12 +1,12 @@
 import { INSTRUMENTS } from "./instruments.js";
 
 export class AudioEngine {
-  constructor() {
+  constructor(instrumentKey) {
     this.ctx = null;
     this.master = null;
 
     this.instruments = INSTRUMENTS;
-    this.currentInstrument = "piano";
+    this.currentInstrument = instrumentKey;
 
     this.voices = new Map();
   }
