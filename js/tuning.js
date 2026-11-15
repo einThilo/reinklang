@@ -24,3 +24,23 @@ export const TUNINGS = {
     ratios: [1, 17 / 16, 9 / 8, 6 / 5, 5 / 4, 11 / 8, 7 / 5, 12 / 8, 8 / 5, 13 / 8, 7 / 4, 15 / 8]
   }
 };
+
+export function midiToFrequency(midi, settings) {
+  const tuning = TUNINGS[settings.tuningMode];
+  if (!tuning || !tuning.ratios) {
+    return getEqualTemperamentFrequency(midi, settings);
+  }
+  return getTunedFrequency(midi, tuning.ratios, settings);
+}
+
+function getEqualTemperamentFrequency(midi, settings) {
+  return settings.a4Frequency * Math.pow(settings.octaveRatio, (midi - 69) / 12);
+}
+
+function getTunedFrequency(midi, ratios, settings) {
+  const diff = midi - settings.tuningRootMidi;
+  const degree = ((diff % 12) + 12) % 12;
+  const octaveShift = Math.floor(diff / 12);
+  const rootFreq = getEqualTemperamentFrequency(settings.tuningRootMidi, settings);
+  return rootFreq * ratios[degree] * Math.pow(settings.octaveRatio, octaveShift);
+}

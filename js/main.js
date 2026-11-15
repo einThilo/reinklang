@@ -1,6 +1,6 @@
 import { Keyboard, clamp } from "./keyboard.js";
 import { INSTRUMENTS } from "./instruments.js";
-import { TUNINGS } from "./tuning.js";
+import { TUNINGS, midiToFrequency } from "./tuning.js";
 import { AudioEngine } from "./audio.js";
 
 document.addEventListener("DOMContentLoaded", init);
@@ -75,9 +75,10 @@ class KeyboardRangeController {
    ============================================================ */
 
 class SynthController {
-  constructor(keyboard, audioEngine) {
+  constructor(keyboard, audioEngine, frequencyOf) {
     this.keyboard = keyboard;
     this.audioEngine = audioEngine;
+    this.frequencyOf = frequencyOf;
 
     this.physicalPresses = new Array(128).fill(0);
     this.isHeld = new Array(128).fill(false);
@@ -136,7 +137,7 @@ class SynthController {
       if (!this.isSounding[midi] || forceTrigger) {
         this.isSounding[midi] = true;
         this.activeNotes.add(midi);
-        this.audioEngine.noteOn(midi);
+        this.audioEngine.noteOn(midi, this.frequencyOf(midi));
         changed = true;
       }
     } else if (this.isSounding[midi]) {
@@ -202,7 +203,31 @@ function init() {
   });
 
   const audioEngine = new AudioEngine();
-  const synth = new SynthController(mainKeyboard, audioEngine);
+
+  const tuningSettings = {
+    a4Frequency: 440,
+    octaveRatio: 2,
+    tuningMode: "thilo",
+    tuningRootMidi: 60
+  };
+
+  const frequencyOf = midi => midiToFrequency(midi, tuningSettings);
+
+  function setTuningSetting(key, value) {
+    tuningSettings[key] = value;
+    audioEngine.retuneAllVoices(frequencyOf);
+  }
+
+  function setTuningMode(mode) {
+    if (!TUNINGS[mode]) return;
+    setTuningSetting("tuningMode", mode);
+  }
+
+  function setTuningRootMidi(midi) {
+    setTuningSetting("tuningRootMidi", Math.max(0, Math.min(127, Math.round(midi))));
+  }
+
+  const synth = new SynthController(mainKeyboard, audioEngine, frequencyOf);
   const keyboardRange = new KeyboardRangeController(mainKeyboard, synth);
 
   document.querySelectorAll("#keyboard-tools button").forEach(btn => {
@@ -216,7 +241,7 @@ function init() {
   
 function setHarmonyRoot(midi) {
     currentHarmonyRoot = midi;
-    audioEngine.setTuningRootMidi(currentHarmonyRoot);
+    setTuningRootMidi(currentHarmonyRoot);
     
     const start = harmonyKeyboard.startMidi;
     const displayMidi = start + (((midi - start) % 12) + 12) % 12;
@@ -291,14 +316,14 @@ function setHarmonyRoot(midi) {
     tuningSelect.appendChild(option);
   });
 
-  tuningSelect.value = audioEngine.tuningMode;
+  tuningSelect.value = tuningSettings.tuningMode;
 
   function updateTuningMode() {
     if (useTuningEnabled) {
-      audioEngine.setTuningMode(tuningSelect.value);
+      setTuningMode(tuningSelect.value);
       tuningButton.classList.add("selected");
     } else {
-      audioEngine.setTuningMode("equal");
+      setTuningMode("equal");
       tuningButton.classList.remove("selected");
     }
   }
@@ -340,12 +365,12 @@ function setHarmonyRoot(midi) {
 
   function updatePitch(val) {
     pitchInput.value = val;
-    audioEngine.setA4Frequency(val);
+    setTuningSetting("a4Frequency", val);
   }
 
   pitchInput.addEventListener("input", event => {
     const val = Number(event.target.value);
-    if (!Number.isNaN(val)) audioEngine.setA4Frequency(val);
+    if (!Number.isNaN(val)) setTuningSetting("a4Frequency", val);
   });
 
   btnPitchDown.addEventListener("pointerdown", event => {
@@ -367,7 +392,7 @@ function setHarmonyRoot(midi) {
     if (event.type === "down") {
       currentHarmonyRoot = event.midi;
       harmonyKeyboard.highlightHarmonyKey(event.midi);
-      audioEngine.setTuningRootMidi(currentHarmonyRoot);
+      setTuningRootMidi(currentHarmonyRoot);
     }
   });
 

@@ -1,17 +1,10 @@
 import { INSTRUMENTS } from "./instruments.js";
-import { TUNINGS } from "./tuning.js";
 
 export class AudioEngine {
   constructor() {
     this.ctx = null;
     this.master = null;
 
-    this.a4Frequency = 440;
-    this.octaveRatio = 2;
-
-    this.tuningMode = "thilo";
-    this.tuningRootMidi = 60;
-    
     this.instruments = INSTRUMENTS;
     this.currentInstrument = "piano";
 
@@ -61,52 +54,10 @@ export class AudioEngine {
     return 0;
   }
 
-  setA4Frequency(freq) {
-    this.a4Frequency = freq;
-    this.retuneAllVoices();
-  }
-
-  setOctaveRatio(ratio) {
-    this.octaveRatio = ratio;
-    this.retuneAllVoices();
-  }
-
-  setTuningMode(mode) {
-    if (!TUNINGS[mode]) return;
-    this.tuningMode = mode;
-    this.retuneAllVoices();
-  }
-
-  setTuningRootMidi(midi) {
-    const clamped = Math.max(0, Math.min(127, Math.round(midi)));
-    this.tuningRootMidi = clamped;
-    this.retuneAllVoices();
-  }
-
   setInstrument(instrumentKey) {
     if (!this.instruments[instrumentKey]) return;
     this.currentInstrument = instrumentKey;
     this.rebuildAllVoices();
-  }
-
-  midiToFrequency(midi) {
-    const tuning = TUNINGS[this.tuningMode];
-    if (!tuning || !tuning.ratios) {
-      return this.getEqualTemperamentFrequency(midi);
-    }
-    return this.getTunedFrequency(midi, tuning.ratios);
-  }
-
-  getEqualTemperamentFrequency(midi) {
-    return this.a4Frequency * Math.pow(this.octaveRatio, (midi - 69) / 12);
-  }
-
-  getTunedFrequency(midi, ratios) {
-    const diff = midi - this.tuningRootMidi;
-    const degree = ((diff % 12) + 12) % 12;
-    const octaveShift = Math.floor(diff / 12);
-    const rootFreq = this.getEqualTemperamentFrequency(this.tuningRootMidi);
-    return rootFreq * ratios[degree] * Math.pow(this.octaveRatio, octaveShift);
   }
 
   getPartialFrequency(baseFreq, series, p) {
@@ -169,11 +120,11 @@ export class AudioEngine {
     }
   }
 
-  retuneAllVoices() {
+  retuneAllVoices(frequencyOf) {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
     for (const [midi, voice] of this.voices) {
-      const baseFreq = this.midiToFrequency(midi);
+      const baseFreq = frequencyOf(midi);
       this.retuneVoice(voice, baseFreq, t);
     }
   }
@@ -193,7 +144,7 @@ export class AudioEngine {
         item.osc.stop(t + 0.02);
       }
 
-      const baseFreq = this.midiToFrequency(midi);
+      const baseFreq = oldVoice.baseFrequency;
       const newVoice = this.createVoice(midi, baseFreq, t);
       newVoice.gain.gain.setValueAtTime(currentGain, t);
 
@@ -201,11 +152,11 @@ export class AudioEngine {
     }
   }
 
-  noteOn(midi) {
+  noteOn(midi, frequency) {
     this.ensureStarted();
 
     const t = this.ctx.currentTime;
-    const freq = this.midiToFrequency(midi);
+    const freq = frequency;
     let voice = this.voices.get(midi);
 
     if (!voice) {
