@@ -1,7 +1,7 @@
 // Einstellungen an einer Stelle. Lesen über `state`, ändern nur über `setState`.
 export const state = {
   rootMidi: 60,
-  harmonyMode: "lowest",
+  harmonyMode: "first",
   tuningMode: "thilo",
   useTuning: false,
   a4Frequency: 440,

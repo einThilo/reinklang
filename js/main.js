@@ -56,6 +56,12 @@ function init() {
     setState("keyboardKeyCount", clamp(Math.round(keyCount), 1, 128 - start));
   }
 
+  // Verschiebt den untersten Ton nur so weit, dass die bisherige Tastenanzahl noch passt.
+  function moveKeyboardStart(delta) {
+    const start = clamp(state.keyboardStartMidi + delta, 0, 128 - state.keyboardKeyCount);
+    setState("keyboardStartMidi", start);
+  }
+
   function handleRangeAction(action) {
     const start = state.keyboardStartMidi;
     const count = state.keyboardKeyCount;
@@ -68,16 +74,16 @@ function init() {
         setKeyboardRange(start, count + 1);
         break;
       case "octDown":
-        setKeyboardRange(start - 12, count);
+        moveKeyboardStart(-12);
         break;
       case "semiDown":
-        setKeyboardRange(start - 1, count);
+        moveKeyboardStart(-1);
         break;
       case "semiUp":
-        setKeyboardRange(start + 1, count);
+        moveKeyboardStart(1);
         break;
       case "octUp":
-        setKeyboardRange(start + 12, count);
+        moveKeyboardStart(12);
         break;
     }
   }
@@ -186,8 +192,15 @@ function init() {
     btnSustain.classList.toggle("selected", state.sustain);
   }
 
+  // Sind Tasten gedrückt, werden sie gehalten und Sustain bleibt aus (kurzes Aufleuchten);
+  // sonst schaltet der Button Sustain um.
   btnSustain.addEventListener("pointerdown", event => {
     event.preventDefault();
+    if (!state.sustain && synth.holdPressedKeys()) {
+      btnSustain.classList.add("selected");
+      setTimeout(() => btnSustain.classList.remove("selected"), 120);
+      return;
+    }
     setState("sustain", !state.sustain);
   });
 
@@ -216,15 +229,25 @@ function init() {
     if (!Number.isNaN(val)) setState("a4Frequency", val);
   });
 
-  btnPitchDown.addEventListener("pointerdown", event => {
-    event.preventDefault();
-    setState("a4Frequency", Number(pitchInput.value) - 1);
-  });
-  
-  btnPitchUp.addEventListener("pointerdown", event => {
-    event.preventDefault();
-    setState("a4Frequency", Number(pitchInput.value) + 1);
-  });
+  // Ruft `action` beim Drücken sofort auf und wiederholt sie, solange der Button gedrückt bleibt.
+  function addRepeatOnHold(button, action) {
+    let delayTimer = null;
+    let repeatTimer = null;
+    const stop = () => {
+      clearTimeout(delayTimer);
+      clearInterval(repeatTimer);
+    };
+    button.addEventListener("pointerdown", event => {
+      event.preventDefault();
+      stop();
+      action();
+      delayTimer = setTimeout(() => { repeatTimer = setInterval(action, 60); }, 400);
+    });
+    ["pointerup", "pointercancel", "pointerleave"].forEach(type => button.addEventListener(type, stop));
+  }
+
+  addRepeatOnHold(btnPitchDown, () => setState("a4Frequency", Number(pitchInput.value) - 1));
+  addRepeatOnHold(btnPitchUp, () => setState("a4Frequency", Number(pitchInput.value) + 1));
 
   mainKeyboard.onPointerNote(event => {
     audioEngine.ensureStarted();
