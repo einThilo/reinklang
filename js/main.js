@@ -110,6 +110,7 @@ function init() {
   });
 
   const synth = new SynthController(mainKeyboard, audioEngine, frequencyOf);
+  synth.setSustainEnabled(state.sustain);
   const keyboardRange = new KeyboardRangeController(mainKeyboard, synth);
   connectAutoRoot(synth);
 
@@ -200,19 +201,22 @@ function init() {
       audioEngine.setInstrument(value);
       instrumentSelect.value = value;
     }
+    if (key === "sustain") {
+      synth.setSustainEnabled(value);
+      updateSustainVisual();
+    }
   });
 
   const btnSustain = document.getElementById("btn-sustain");
   const btnRelease = document.getElementById("btn-release");
 
   function updateSustainVisual() {
-    btnSustain.classList.toggle("selected", synth.sustainEnabled);
+    btnSustain.classList.toggle("selected", state.sustain);
   }
 
   btnSustain.addEventListener("pointerdown", event => {
     event.preventDefault();
-    synth.setSustainEnabled(!synth.sustainEnabled);
-    updateSustainVisual();
+    setState("sustain", !state.sustain);
   });
 
   btnRelease.addEventListener("pointerdown", event => {

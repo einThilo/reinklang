@@ -6,7 +6,8 @@ export const state = {
   useTuning: false,
   a4Frequency: 440,
   transpose: 0,
-  instrument: "piano"
+  instrument: "piano",
+  sustain: false
 };
 
 const listeners = [];
