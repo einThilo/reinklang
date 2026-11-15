@@ -7,7 +7,9 @@ export const state = {
   a4Frequency: 440,
   transpose: 0,
   instrument: "piano",
-  sustain: false
+  sustain: false,
+  keyboardStartMidi: 45,
+  keyboardKeyCount: 26
 };
 
 const listeners = [];

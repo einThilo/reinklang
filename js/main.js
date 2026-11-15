@@ -8,70 +8,6 @@ import { state, setState, onStateChange } from "./state.js";
 document.addEventListener("DOMContentLoaded", init);
 
 
-class KeyboardRangeController {
-  constructor(keyboard, synth) {
-    this.keyboard = keyboard;
-    this.synth = synth;
-
-    this.state = {
-      startMidi: keyboard.startMidi,
-      keyCount: keyboard.keyCount
-    };
-  }
-
-  applyRange() {
-    this.keyboard.setRange(this.state);
-    this.synth.syncAllVisuals();
-  }
-
-  setStartMidi(startMidi) {
-    const normalizedStart = clamp(Math.round(startMidi), 0, 127);
-    const maxKeyCount = 128 - normalizedStart;
-
-    this.state = {
-      startMidi: normalizedStart,
-      keyCount: clamp(Math.round(this.state.keyCount), 1, maxKeyCount)
-    };
-
-    this.applyRange();
-  }
-
-  setKeyCount(keyCount) {
-    const normalizedStart = clamp(Math.round(this.state.startMidi), 0, 127);
-    const maxKeyCount = 128 - normalizedStart;
-
-    this.state = {
-      startMidi: normalizedStart,
-      keyCount: clamp(Math.round(keyCount), 1, maxKeyCount)
-    };
-
-    this.applyRange();
-  }
-
-  handleAction(action) {
-    switch (action) {
-      case "decKeys":
-        this.setKeyCount(this.state.keyCount - 1);
-        break;
-      case "incKeys":
-        this.setKeyCount(this.state.keyCount + 1);
-        break;
-      case "octDown":
-        this.setStartMidi(this.state.startMidi - 12);
-        break;
-      case "semiDown":
-        this.setStartMidi(this.state.startMidi - 1);
-        break;
-      case "semiUp":
-        this.setStartMidi(this.state.startMidi + 1);
-        break;
-      case "octUp":
-        this.setStartMidi(this.state.startMidi + 12);
-        break;
-    }
-  }
-}
-
 /* ============================================================
    UI BUILDERS
    ============================================================ */
@@ -89,8 +25,8 @@ function init() {
 
   const mainKeyboard = new Keyboard({
     container: mainKeyboardContainer,
-    startMidi: 45,
-    keyCount: 26,
+    startMidi: state.keyboardStartMidi,
+    keyCount: state.keyboardKeyCount,
     id: "main"
   });
 
@@ -111,13 +47,45 @@ function init() {
 
   const synth = new SynthController(mainKeyboard, audioEngine, frequencyOf);
   synth.setSustainEnabled(state.sustain);
-  const keyboardRange = new KeyboardRangeController(mainKeyboard, synth);
   connectAutoRoot(synth);
+
+  // Setzt den Tastenbereich der Hauptklaviatur, begrenzt auf gültige Werte.
+  function setKeyboardRange(startMidi, keyCount) {
+    const start = clamp(Math.round(startMidi), 0, 127);
+    setState("keyboardStartMidi", start);
+    setState("keyboardKeyCount", clamp(Math.round(keyCount), 1, 128 - start));
+  }
+
+  function handleRangeAction(action) {
+    const start = state.keyboardStartMidi;
+    const count = state.keyboardKeyCount;
+
+    switch (action) {
+      case "decKeys":
+        setKeyboardRange(start, count - 1);
+        break;
+      case "incKeys":
+        setKeyboardRange(start, count + 1);
+        break;
+      case "octDown":
+        setKeyboardRange(start - 12, count);
+        break;
+      case "semiDown":
+        setKeyboardRange(start - 1, count);
+        break;
+      case "semiUp":
+        setKeyboardRange(start + 1, count);
+        break;
+      case "octUp":
+        setKeyboardRange(start + 12, count);
+        break;
+    }
+  }
 
   document.querySelectorAll("#keyboard-tools button").forEach(btn => {
     btn.addEventListener("pointerdown", event => {
       event.preventDefault(); 
-      keyboardRange.handleAction(btn.dataset.action);
+      handleRangeAction(btn.dataset.action);
     });
   });
 
@@ -204,6 +172,10 @@ function init() {
     if (key === "sustain") {
       synth.setSustainEnabled(value);
       updateSustainVisual();
+    }
+    if (key === "keyboardStartMidi" || key === "keyboardKeyCount") {
+      mainKeyboard.setRange({ startMidi: state.keyboardStartMidi, keyCount: state.keyboardKeyCount });
+      synth.syncAllVisuals();
     }
   });
 
