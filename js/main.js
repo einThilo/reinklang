@@ -187,7 +187,7 @@ function init() {
   });
   updateTuningControls();
 
-  onStateChange(key => {
+  onStateChange((key, value, previous) => {
     if (key === "rootMidi" || key === "tuningMode" || key === "useTuning" || key === "a4Frequency") {
       audioEngine.retuneAllVoices(frequencyOf);
     }
@@ -195,6 +195,7 @@ function init() {
     if (key === "harmonyMode") updateHarmonyModeButtons();
     if (key === "tuningMode" || key === "useTuning") updateTuningControls();
     if (key === "a4Frequency") updatePitchInput();
+    if (key === "transpose") applyTranspose(value - previous);
   });
 
   const btnSustain = document.getElementById("btn-sustain");
@@ -250,20 +251,18 @@ function init() {
     synth.handlePointerEvent(event.type, event.midi);
   });
 
-  let currentTranspose = 0;
   const transValDisplay = document.getElementById("trans-val");
   const btnTransDown = document.getElementById("btn-trans-down");
   const btnTransUp = document.getElementById("btn-trans-up");
 
-  function updateTranspose(offset) {
-    const diff = offset - currentTranspose;
-    currentTranspose = offset;
-    transValDisplay.textContent = currentTranspose > 0 ? `+${currentTranspose}` : currentTranspose;
+  // Verschiebt beide Klaviaturen auf die neue Transposition; der Grundton wandert um `diff` mit.
+  function applyTranspose(diff) {
+    transValDisplay.textContent = state.transpose > 0 ? `+${state.transpose}` : state.transpose;
     
-    mainKeyboard.setTranspose(currentTranspose);
+    mainKeyboard.setTranspose(state.transpose);
     
-    harmonyKeyboard.transposeOffset = currentTranspose;
-    harmonyKeyboard.setRange({ startMidi: 60 + currentTranspose, keyCount: 12 });
+    harmonyKeyboard.transposeOffset = state.transpose;
+    harmonyKeyboard.setRange({ startMidi: 60 + state.transpose, keyCount: 12 });
     
     setState("rootMidi", clamp(state.rootMidi + diff, 0, 127));
     updateRootHighlight();
@@ -273,12 +272,12 @@ function init() {
 
   btnTransDown.addEventListener("pointerdown", event => {
     event.preventDefault();
-    updateTranspose(currentTranspose - 1);
+    setState("transpose", state.transpose - 1);
   });
 
   btnTransUp.addEventListener("pointerdown", event => {
     event.preventDefault();
-    updateTranspose(currentTranspose + 1);
+    setState("transpose", state.transpose + 1);
   });
 
   function updateFullscreenButton() {
