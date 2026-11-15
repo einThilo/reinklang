@@ -3,7 +3,8 @@ export const state = {
   rootMidi: 60,
   harmonyMode: "lowest",
   tuningMode: "thilo",
-  useTuning: false
+  useTuning: false,
+  a4Frequency: 440
 };
 
 const listeners = [];

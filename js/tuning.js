@@ -34,7 +34,7 @@ export function midiToFrequency(midi, settings) {
 }
 
 function getEqualTemperamentFrequency(midi, settings) {
-  return settings.a4Frequency * Math.pow(settings.octaveRatio, (midi - 69) / 12);
+  return settings.a4Frequency * Math.pow(2, (midi - 69) / 12);
 }
 
 function getTunedFrequency(midi, ratios, settings) {
@@ -42,5 +42,5 @@ function getTunedFrequency(midi, ratios, settings) {
   const degree = ((diff % 12) + 12) % 12;
   const octaveShift = Math.floor(diff / 12);
   const rootFreq = getEqualTemperamentFrequency(settings.tuningRootMidi, settings);
-  return rootFreq * ratios[degree] * Math.pow(settings.octaveRatio, octaveShift);
+  return rootFreq * ratios[degree] * Math.pow(2, octaveShift);
 }

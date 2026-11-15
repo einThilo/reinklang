@@ -103,21 +103,11 @@ function init() {
 
   const audioEngine = new AudioEngine();
 
-  const tuningSettings = {
-    a4Frequency: 440,
-    octaveRatio: 2
-  };
-
   const frequencyOf = midi => midiToFrequency(midi, {
-    ...tuningSettings,
+    a4Frequency: state.a4Frequency,
     tuningMode: state.useTuning ? state.tuningMode : "equal",
     tuningRootMidi: state.rootMidi
   });
-
-  function setTuningSetting(key, value) {
-    tuningSettings[key] = value;
-    audioEngine.retuneAllVoices(frequencyOf);
-  }
 
   const synth = new SynthController(mainKeyboard, audioEngine, frequencyOf);
   const keyboardRange = new KeyboardRangeController(mainKeyboard, synth);
@@ -198,12 +188,13 @@ function init() {
   updateTuningControls();
 
   onStateChange(key => {
-    if (key === "rootMidi" || key === "tuningMode" || key === "useTuning") {
+    if (key === "rootMidi" || key === "tuningMode" || key === "useTuning" || key === "a4Frequency") {
       audioEngine.retuneAllVoices(frequencyOf);
     }
     if (key === "rootMidi") updateRootHighlight();
     if (key === "harmonyMode") updateHarmonyModeButtons();
     if (key === "tuningMode" || key === "useTuning") updateTuningControls();
+    if (key === "a4Frequency") updatePitchInput();
   });
 
   const btnSustain = document.getElementById("btn-sustain");
@@ -233,24 +224,25 @@ function init() {
   const btnPitchDown = document.getElementById("btn-pitch-down");
   const btnPitchUp = document.getElementById("btn-pitch-up");
 
-  function updatePitch(val) {
-    pitchInput.value = val;
-    setTuningSetting("a4Frequency", val);
+  // Schreibt den Stimmton ins Zahlenfeld, aber nur, wenn dort eine andere Zahl steht
+  // (sonst würde das Tippen im Feld gestört).
+  function updatePitchInput() {
+    if (Number(pitchInput.value) !== state.a4Frequency) pitchInput.value = state.a4Frequency;
   }
 
   pitchInput.addEventListener("input", event => {
     const val = Number(event.target.value);
-    if (!Number.isNaN(val)) setTuningSetting("a4Frequency", val);
+    if (!Number.isNaN(val)) setState("a4Frequency", val);
   });
 
   btnPitchDown.addEventListener("pointerdown", event => {
     event.preventDefault();
-    updatePitch(Number(pitchInput.value) - 1);
+    setState("a4Frequency", Number(pitchInput.value) - 1);
   });
   
   btnPitchUp.addEventListener("pointerdown", event => {
     event.preventDefault();
-    updatePitch(Number(pitchInput.value) + 1);
+    setState("a4Frequency", Number(pitchInput.value) + 1);
   });
 
   mainKeyboard.onPointerNote(event => {
