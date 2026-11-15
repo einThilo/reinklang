@@ -10,7 +10,6 @@ export const INSTRUMENTS = {
         type: "sine",
         fromPartial: 1,
         untilPartial: 6,
-        proportion: 1,
         gainKeyframes: { 50: 0.4, 150: 0.5, 500: 0.6, 2000: 0.4 },
         falloffKeyframes: { 50: 0.2, 500: 0.4, 2000: 0.6 }
       },
@@ -18,7 +17,6 @@ export const INSTRUMENTS = {
         type: "triangle",
         fromPartial: 1,
         untilPartial: 4,
-        proportion: 1,
         gainKeyframes: { 50: 0.6, 150: 0.3, 400: 0.1, 800: 0.0 },
         falloffKeyframes: { 50: 0.4, 400: 0.6, 800: 0.8 }
       }
@@ -35,7 +33,6 @@ export const INSTRUMENTS = {
         type: "sine",
         fromPartial: 1,
         untilPartial: 6,
-        proportion: 1,
         gainKeyframes: { 50: 0.5, 200: 0.6, 1000: 0.5 },
         falloffKeyframes: { 50: 0.3, 500: 0.4 }
       },
@@ -43,7 +40,6 @@ export const INSTRUMENTS = {
         type: "triangle",
         fromPartial: 1,
         untilPartial: 5,
-        proportion: 1,
         gainKeyframes: { 50: 0.4, 200: 0.3, 600: 0.0 },
         falloffKeyframes: { 50: 0.5, 500: 0.7 }
       }
