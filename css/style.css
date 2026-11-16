@@ -434,3 +434,17 @@ body.layout-ecke #app {
     "sustain  use      rootkeys fullscreen autoroot   autoroot"
     "keyboard keyboard keyboard keyboard   keyboard   keyboard";
 }
+
+/* "ecken": Release/Sustain am linken, Use tuning am rechten Ende der Leiste. */
+body.layout-ecken #app {
+  grid-template-columns:
+    minmax(0, 12fr) minmax(0, 35fr)
+    minmax(0, 14.33fr) minmax(0, 7.17fr) minmax(0, 21.5fr) minmax(0, 10fr);
+  grid-template-rows: repeat(4, minmax(0, 12.25fr)) minmax(0, 51fr);
+  grid-template-areas:
+    "release  rootkeys instrument instrument tuning    use"
+    "release  rootkeys range      range      transpose use"
+    "sustain  rootkeys range      range      pitch     use"
+    "sustain  rootkeys fullscreen autoroot   autoroot  use"
+    "keyboard keyboard keyboard   keyboard   keyboard  keyboard";
+}
