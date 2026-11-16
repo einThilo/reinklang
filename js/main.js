@@ -7,7 +7,7 @@ import { state, setState, setStates, onStateChange, LIMITS } from "./state.js";
 
 // Layout-Varianten: ?layout=<name> setzt die Klasse layout-<name> am <body>
 // (Regeln dazu in css/style.css). Ohne Zusatz oder bei unbekanntem Namen gilt die Vorgabe.
-const LAYOUTS = ["band"];
+const LAYOUTS = ["band", "band-unten"];
 
 document.addEventListener("DOMContentLoaded", init);
 

@@ -388,3 +388,14 @@ body.layout-band #app {
     "release  sustain    sustain  use       use"
     "keyboard keyboard   keyboard keyboard  keyboard";
 }
+
+/* --- Variante "band-unten": wie "band", das Band liegt unter der Klaviatur am unteren Rand --- */
+body.layout-band-unten #app {
+  grid-template-columns: minmax(0, 35fr) minmax(0, 16fr) minmax(0, 20fr) minmax(0, 19fr) minmax(0, 10fr);
+  grid-template-rows: minmax(0, 16fr) minmax(0, 16fr) minmax(0, 51fr) minmax(0, 17fr);
+  grid-template-areas:
+    "rootkeys instrument range    transpose fullscreen"
+    "rootkeys tuning     range    pitch     autoroot"
+    "keyboard keyboard   keyboard keyboard  keyboard"
+    "release  sustain    sustain  use       use";
+}
