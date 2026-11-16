@@ -56,3 +56,19 @@ test("ein Zuhörer sieht beim Aufruf schon den neuen Wert in state", () => {
 
   assert.equal(seen, true);
 });
+
+test("onStateChange mit Namensliste ruft nur bei diesen Werten, in Reihenfolge der Anmeldung", () => {
+  const calls = [];
+  onStateChange(["rootMidi", "a4Frequency"], (...args) => calls.push(["a", ...args]));
+  onStateChange(["rootMidi"], (...args) => calls.push(["b", ...args]));
+  const previousRoot = state.rootMidi;
+  const previousPitch = state.a4Frequency;
+  setState("instrument", state.instrument === "piano" ? "organ" : "piano");
+  setState("rootMidi", previousRoot + 1);
+  setState("a4Frequency", previousPitch + 1);
+  assert.deepEqual(calls, [
+    ["a", "rootMidi", previousRoot + 1, previousRoot],
+    ["b", "rootMidi", previousRoot + 1, previousRoot],
+    ["a", "a4Frequency", previousPitch + 1, previousPitch]
+  ]);
+});

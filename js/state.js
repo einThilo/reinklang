@@ -23,6 +23,14 @@ export function setState(key, value) {
   listeners.forEach(listener => listener(key, value, previous));
 }
 
-export function onStateChange(listener) {
-  listeners.push(listener);
+// Meldet einen Zuhörer an: `onStateChange(listener)` für alle Werte,
+// `onStateChange(keys, listener)` nur für die genannten.
+export function onStateChange(keysOrListener, listener) {
+  if (typeof keysOrListener === "function") {
+    listeners.push(keysOrListener);
+    return;
+  }
+  listeners.push((key, value, previous) => {
+    if (keysOrListener.includes(key)) listener(key, value, previous);
+  });
 }
