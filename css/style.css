@@ -371,6 +371,7 @@ body[class*="layout-"] .tuning-use-button {
   border-radius: 0;
   box-sizing: border-box;
   font-size: clamp(14px, 4vmin, 24px);
+  text-align: center;
 }
 
 /* Harmonie-Automatik: kein dicker Rand rechts (liegt nicht mehr neben der Grundton-Klaviatur). */
