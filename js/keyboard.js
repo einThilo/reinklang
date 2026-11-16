@@ -12,6 +12,11 @@ export class Keyboard {
     this.keyElements = new Map();
     this.transposeOffset = 0;
 
+    // Markierungen, die beim Neuaufbau der Tasten wieder gesetzt werden.
+    this.heldMidis = new Set();
+    this.activeMidis = new Set();
+    this.highlightedMidi = null;
+
     this.rootElement = document.createElement("div");
     this.rootElement.className = "keyboard";
     this.container.appendChild(this.rootElement);
@@ -72,7 +77,16 @@ export class Keyboard {
       keyElement.appendChild(label);
       this.rootElement.appendChild(keyElement);
       this.keyElements.set(midi, keyElement);
+      this.applyMarks(midi);
     }
+  }
+
+  // Setzt die Markierungen einer Taste nach dem gemerkten Stand.
+  applyMarks(midi) {
+    const element = this.keyElements.get(midi);
+    if (!element) return;
+    element.classList.toggle("held", this.heldMidis.has(midi));
+    element.classList.toggle("active", this.activeMidis.has(midi) || this.highlightedMidi === midi);
   }
 
   layoutKeys() {
@@ -182,24 +196,22 @@ export class Keyboard {
   }
 
   setHeldState(midi, held) {
-    const element = this.keyElements.get(midi);
-    if (!element) return;
-    element.classList.toggle("held", held);
+    if (held) this.heldMidis.add(midi);
+    else this.heldMidis.delete(midi);
+    this.applyMarks(midi);
   }
 
   setActiveState(midi, active) {
-    const element = this.keyElements.get(midi);
-    if (!element) return;
-    element.classList.toggle("active", active);
+    if (active) this.activeMidis.add(midi);
+    else this.activeMidis.delete(midi);
+    this.applyMarks(midi);
   }
 
   highlightHarmonyKey(midi) {
-    this.rootElement.querySelectorAll(".key").forEach(key => {
-      key.classList.remove("active");
-    });
-
-    const key = this.rootElement.querySelector(`.key[data-midi="${midi}"]`);
-    if (key) key.classList.add("active");
+    const previous = this.highlightedMidi;
+    this.highlightedMidi = midi;
+    if (previous !== null) this.applyMarks(previous);
+    this.applyMarks(midi);
   }
 }
 

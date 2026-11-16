@@ -93,12 +93,6 @@ export class SynthController {
     this.keyboard.setHeldState(midi, this.isHeld[midi]);
     this.keyboard.setActiveState(midi, this.physicalPresses[midi] > 0);
   }
-
-  syncAllVisuals() {
-    for (let midi = 0; midi < 128; midi++) {
-      this.updateKeyboardVisuals(midi);
-    }
-  }
 }
 
 // Grundton-Automatik: liefert den neuen Grundton oder null (keine Änderung).

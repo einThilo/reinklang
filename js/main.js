@@ -49,13 +49,13 @@ function init() {
     harmonyKeyboard.highlightHarmonyKey(displayMidi);
   }
 
-  setupKeyboardRange(mainKeyboard, synth);
+  setupKeyboardRange(mainKeyboard);
   setupHarmony(harmonyKeyboard, updateRootHighlight);
   setupInstrument(audioEngine);
   setupTuning();
   setupSustain(synth);
   setupPitch();
-  setupTranspose(mainKeyboard, harmonyKeyboard, synth, updateRootHighlight);
+  setupTranspose(mainKeyboard, harmonyKeyboard, updateRootHighlight);
   setupFullscreen();
 
   document.body.addEventListener(
@@ -74,7 +74,7 @@ function init() {
    ============================================================ */
 
 // Tastenbereich der Hauptklaviatur: unterster Ton und Tastenanzahl.
-function setupKeyboardRange(mainKeyboard, synth) {
+function setupKeyboardRange(mainKeyboard) {
   // Verschiebt den untersten Ton nur so weit, dass die bisherige Tastenanzahl noch passt
   // (die übrigen Grenzen setzt `state.js`).
   function moveKeyboardStart(delta) {
@@ -113,7 +113,6 @@ function setupKeyboardRange(mainKeyboard, synth) {
 
   onStateChange(["keyboardStartMidi", "keyboardKeyCount"], () => {
     mainKeyboard.setRange({ startMidi: state.keyboardStartMidi, keyCount: state.keyboardKeyCount });
-    synth.syncAllVisuals();
   });
 }
 
@@ -294,7 +293,7 @@ function addRepeatOnHold(button, action) {
 }
 
 // Transposition: Anzeige und Buttons.
-function setupTranspose(mainKeyboard, harmonyKeyboard, synth, updateRootHighlight) {
+function setupTranspose(mainKeyboard, harmonyKeyboard, updateRootHighlight) {
   const transValDisplay = document.getElementById("trans-val");
   const btnTransDown = document.getElementById("btn-trans-down");
   const btnTransUp = document.getElementById("btn-trans-up");
@@ -320,8 +319,6 @@ function setupTranspose(mainKeyboard, harmonyKeyboard, synth, updateRootHighligh
     harmonyKeyboard.setRange({ startMidi: 60 + state.transpose, keyCount: 12 });
 
     updateRootHighlight();
-
-    synth.syncAllVisuals();
   }
 
   btnTransDown.addEventListener("pointerdown", event => {
