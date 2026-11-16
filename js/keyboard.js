@@ -7,7 +7,6 @@ export class Keyboard {
     this.container = options.container;
     this.startMidi = options.startMidi ?? 60;
     this.keyCount = options.keyCount ?? 24;
-    this.id = options.id ?? "keyboard";
 
     this.keys = [];
     this.keyElements = new Map();
@@ -19,8 +18,6 @@ export class Keyboard {
 
     this.createKeys();
     this.layoutKeys();
-
-    window.addEventListener("resize", () => this.layoutKeys());
   }
 
   getNoteName(midi) {
@@ -59,7 +56,6 @@ export class Keyboard {
 
       const key = {
         midi,
-        name: this.getNoteName(midi),
         isWhite: this.isWhiteKey(midi)
       };
 
@@ -68,11 +64,10 @@ export class Keyboard {
       const keyElement = document.createElement("div");
       keyElement.className = `key ${key.isWhite ? "white" : "black"}`;
       keyElement.dataset.midi = String(midi);
-      keyElement.dataset.keyboardId = this.id;
 
       const label = document.createElement("div");
       label.className = "key-label";
-      label.textContent = key.name;
+      label.textContent = this.getNoteName(midi);
 
       keyElement.appendChild(label);
       this.rootElement.appendChild(keyElement);
@@ -119,9 +114,7 @@ export class Keyboard {
     const emit = (type, midi, pointerId) => {
       callback({
         type,
-        keyboardId: this.id,
         midi,
-        name: this.getNoteName(midi),
         pointerId
       });
     };

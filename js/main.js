@@ -7,11 +7,6 @@ import { state, setState, onStateChange } from "./state.js";
 
 document.addEventListener("DOMContentLoaded", init);
 
-
-/* ============================================================
-   UI BUILDERS
-   ============================================================ */
-
 /* ============================================================
    APP INITIALIZATION
    ============================================================ */
@@ -20,15 +15,13 @@ function init() {
   const mainKeyboard = new Keyboard({
     container: document.getElementById("keyboard"),
     startMidi: state.keyboardStartMidi,
-    keyCount: state.keyboardKeyCount,
-    id: "main"
+    keyCount: state.keyboardKeyCount
   });
 
   const harmonyKeyboard = new Keyboard({
     container: document.getElementById("harmony-keyboard"),
     startMidi: 60,
-    keyCount: 12,
-    id: "harmony"
+    keyCount: 12
   });
 
   const audioEngine = new AudioEngine(state.instrument);

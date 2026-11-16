@@ -8,7 +8,6 @@ export class SynthController {
 
     this.physicalPresses = new Array(128).fill(0);
     this.isHeld = new Array(128).fill(false);
-    this.isSounding = new Array(128).fill(false);
     this.sustainEnabled = false;
     
     this.activeNotes = new Set();
@@ -73,8 +72,7 @@ export class SynthController {
     const shouldSound = this.physicalPresses[midi] > 0 || this.isHeld[midi];
     
     if (shouldSound) {
-      if (!this.isSounding[midi] || forceTrigger) {
-        this.isSounding[midi] = true;
+      if (!this.activeNotes.has(midi) || forceTrigger) {
         this.activeNotes.add(midi);
         // Erst melden, dann anschlagen: Die Grundton-Automatik legt so den Grundton fest,
         // bevor die Frequenz des neuen Tons berechnet wird. Deshalb hier kein `changed`,
@@ -82,8 +80,7 @@ export class SynthController {
         this.onNotesChanged();
         this.audioEngine.noteOn(midi, this.frequencyOf(midi));
       }
-    } else if (this.isSounding[midi]) {
-      this.isSounding[midi] = false;
+    } else if (this.activeNotes.has(midi)) {
       this.activeNotes.delete(midi);
       this.audioEngine.noteOff(midi);
       changed = true;
@@ -101,17 +98,6 @@ export class SynthController {
     for (let midi = 0; midi < 128; midi++) {
       this.updateKeyboardVisuals(midi);
     }
-  }
-
-  stopAllNotes() {
-    let changed = false;
-    for (let midi = 0; midi < 128; midi++) {
-      this.physicalPresses[midi] = 0;
-      this.isHeld[midi] = false;
-      if (this.evaluateNoteStateInternal(midi)) changed = true;
-      this.updateKeyboardVisuals(midi);
-    }
-    if (changed) this.onNotesChanged();
   }
 }
 
