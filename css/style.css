@@ -291,6 +291,8 @@ button {
 }
 
 .key.black {
+  /* Anteil an der Klaviaturhöhe; eine Layout-Variante setzt --black-key-height an der Klaviatur. */
+  height: var(--black-key-height, 60%);
   background: linear-gradient(to bottom, #333 0%, #000 100%);
   border-radius: 0 0 6px 6px;
   z-index: 2;

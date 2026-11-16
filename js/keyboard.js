@@ -115,7 +115,7 @@ export class Keyboard {
       } else {
         element.style.left = ((whiteIndex - 0.45) / whiteCount) * 100 + "%";
         element.style.width = (0.9 / whiteCount) * 100 + "%";
-        element.style.height = "60%";
+        // Höhe der schwarzen Tasten steht in style.css (--black-key-height).
       }
     });
   }
