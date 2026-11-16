@@ -14,9 +14,15 @@ export const state = {
 
 const listeners = [];
 
+// Wirft einen Fehler bei einem Namen, den `state` nicht kennt (z. B. Tippfehler im Code).
+function checkKey(key) {
+  if (!Object.hasOwn(state, key)) throw new Error(`Unbekannter Wert in state: ${key}`);
+}
+
 // Setzt einen Wert und benachrichtigt alle Zuhörer, aber nur bei echter Änderung.
 // Zuhörer bekommen den Namen, den neuen und den vorherigen Wert.
 export function setState(key, value) {
+  checkKey(key);
   const previous = state[key];
   if (previous === value) return;
   state[key] = value;
@@ -30,6 +36,7 @@ export function onStateChange(keysOrListener, listener) {
     listeners.push(keysOrListener);
     return;
   }
+  keysOrListener.forEach(checkKey);
   listeners.push((key, value, previous) => {
     if (keysOrListener.includes(key)) listener(key, value, previous);
   });

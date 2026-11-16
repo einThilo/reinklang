@@ -72,3 +72,9 @@ test("onStateChange mit Namensliste ruft nur bei diesen Werten, in Reihenfolge d
     ["a", "a4Frequency", previousPitch + 1, previousPitch]
   ]);
 });
+
+test("setState und onStateChange werfen bei unbekanntem Namen einen Fehler", () => {
+  assert.throws(() => setState("a4Frequenz", 442), /a4Frequenz/);
+  assert.throws(() => onStateChange(["rootMidi", "grundton"], () => {}), /grundton/);
+  assert.equal(Object.hasOwn(state, "a4Frequenz"), false);
+});
