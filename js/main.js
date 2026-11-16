@@ -17,21 +17,15 @@ document.addEventListener("DOMContentLoaded", init);
    ============================================================ */
 
 function init() {
-  const mainKeyboardContainer = document.getElementById("keyboard");
-  const harmonyKeyboardContainer = document.getElementById("harmony-keyboard");
-  
-  const appRoot = document.querySelector(".column");
-  const fullscreenButton = document.getElementById("fullscreen-toggle");
-
   const mainKeyboard = new Keyboard({
-    container: mainKeyboardContainer,
+    container: document.getElementById("keyboard"),
     startMidi: state.keyboardStartMidi,
     keyCount: state.keyboardKeyCount,
     id: "main"
   });
 
   const harmonyKeyboard = new Keyboard({
-    container: harmonyKeyboardContainer,
+    container: document.getElementById("harmony-keyboard"),
     startMidi: 60,
     keyCount: 12,
     id: "harmony"
@@ -45,6 +39,49 @@ function init() {
   synth.setSustainEnabled(state.sustain);
   connectAutoRoot(synth);
 
+  onStateChange(["rootMidi", "tuningMode", "useTuning", "a4Frequency"], () => {
+    audioEngine.retuneAllVoices(frequencyOf);
+  });
+
+  mainKeyboard.onPointerNote(event => {
+    audioEngine.ensureStarted();
+    synth.handlePointerEvent(event.type, event.midi);
+  });
+
+  // Markiert den Grundton auf der Grundton-Klaviatur (in deren Oktave).
+  function updateRootHighlight() {
+    const start = harmonyKeyboard.startMidi;
+    const displayMidi = start + (((state.rootMidi - start) % 12) + 12) % 12;
+
+    harmonyKeyboard.highlightHarmonyKey(displayMidi);
+  }
+
+  setupKeyboardRange(mainKeyboard, synth);
+  setupHarmony(harmonyKeyboard, updateRootHighlight);
+  setupInstrument(audioEngine);
+  setupTuning();
+  setupSustain(synth);
+  setupPitch();
+  setupTranspose(mainKeyboard, harmonyKeyboard, synth, updateRootHighlight);
+  setupFullscreen();
+
+  document.body.addEventListener(
+    "pointerdown",
+    () => { void audioEngine.ensureStarted(); },
+    { once: true }
+  );
+
+  document.addEventListener("contextmenu", event => {
+    event.preventDefault();
+  });
+}
+
+/* ============================================================
+   BEDIENBEREICHE
+   ============================================================ */
+
+// Tastenbereich der Hauptklaviatur: unterster Ton und Tastenanzahl.
+function setupKeyboardRange(mainKeyboard, synth) {
   // Setzt den Tastenbereich der Hauptklaviatur, begrenzt auf gültige Werte.
   function setKeyboardRange(startMidi, keyCount) {
     const start = clamp(Math.round(startMidi), 0, 127);
@@ -86,20 +123,19 @@ function init() {
 
   document.querySelectorAll("#keyboard-tools button").forEach(btn => {
     btn.addEventListener("pointerdown", event => {
-      event.preventDefault(); 
+      event.preventDefault();
       handleRangeAction(btn.dataset.action);
     });
   });
 
-  function updateRootHighlight() {
-    const start = harmonyKeyboard.startMidi;
-    const displayMidi = start + (((state.rootMidi - start) % 12) + 12) % 12;
+  onStateChange(["keyboardStartMidi", "keyboardKeyCount"], () => {
+    mainKeyboard.setRange({ startMidi: state.keyboardStartMidi, keyCount: state.keyboardKeyCount });
+    synth.syncAllVisuals();
+  });
+}
 
-    harmonyKeyboard.highlightHarmonyKey(displayMidi);
-  }
-
-  updateRootHighlight();
-
+// Grundton-Klaviatur und Harmonie-Automatik („Tiefster“, „Erster“).
+function setupHarmony(harmonyKeyboard, updateRootHighlight) {
   const autoBtns = document.querySelectorAll(".auto-btn");
 
   function updateHarmonyModeButtons() {
@@ -112,7 +148,6 @@ function init() {
       setState("harmonyMode", btn.dataset.mode);
     });
   });
-  updateHarmonyModeButtons();
 
   harmonyKeyboard.onPointerNote(event => {
     if (event.type === "down") {
@@ -121,19 +156,37 @@ function init() {
     }
   });
 
+  onStateChange(["rootMidi"], updateRootHighlight);
+  onStateChange(["harmonyMode"], updateHarmonyModeButtons);
+
+  updateRootHighlight();
+  updateHarmonyModeButtons();
+}
+
+// Auswahlliste für das Instrument.
+function setupInstrument(audioEngine) {
   const instrumentSelect = document.getElementById("instrument-select");
+
   for (const [key, inst] of Object.entries(INSTRUMENTS)) {
     const option = document.createElement("option");
     option.value = key;
     option.textContent = inst.name;
     instrumentSelect.appendChild(option);
   }
-  
+
   instrumentSelect.value = state.instrument;
   instrumentSelect.addEventListener("change", () => {
     setState("instrument", instrumentSelect.value);
   });
 
+  onStateChange(["instrument"], (key, value) => {
+    audioEngine.setInstrument(value);
+    instrumentSelect.value = value;
+  });
+}
+
+// Auswahlliste für die Stimmung und Button „Use tuning“.
+function setupTuning() {
   const tuningSelect = document.getElementById("tuning-select");
   const tuningButton = document.getElementById("tuning-use-button");
 
@@ -156,31 +209,13 @@ function init() {
     event.preventDefault();
     setState("useTuning", !state.useTuning);
   });
+
+  onStateChange(["tuningMode", "useTuning"], updateTuningControls);
   updateTuningControls();
+}
 
-  onStateChange((key, value, previous) => {
-    if (key === "rootMidi" || key === "tuningMode" || key === "useTuning" || key === "a4Frequency") {
-      audioEngine.retuneAllVoices(frequencyOf);
-    }
-    if (key === "rootMidi") updateRootHighlight();
-    if (key === "harmonyMode") updateHarmonyModeButtons();
-    if (key === "tuningMode" || key === "useTuning") updateTuningControls();
-    if (key === "a4Frequency") updatePitchInput();
-    if (key === "transpose") applyTranspose(value - previous);
-    if (key === "instrument") {
-      audioEngine.setInstrument(value);
-      instrumentSelect.value = value;
-    }
-    if (key === "sustain") {
-      synth.setSustainEnabled(value);
-      updateSustainVisual();
-    }
-    if (key === "keyboardStartMidi" || key === "keyboardKeyCount") {
-      mainKeyboard.setRange({ startMidi: state.keyboardStartMidi, keyCount: state.keyboardKeyCount });
-      synth.syncAllVisuals();
-    }
-  });
-
+// Buttons „Sustain“ und „Release“.
+function setupSustain(synth) {
   const btnSustain = document.getElementById("btn-sustain");
   const btnRelease = document.getElementById("btn-release");
 
@@ -208,8 +243,16 @@ function init() {
       btnRelease.classList.remove("selected");
     }, 120);
   });
-  updateSustainVisual();
 
+  onStateChange(["sustain"], (key, value) => {
+    synth.setSustainEnabled(value);
+    updateSustainVisual();
+  });
+  updateSustainVisual();
+}
+
+// Stimmton: Zahlenfeld und +/−.
+function setupPitch() {
   const pitchInput = document.getElementById("tone-input");
   const btnPitchDown = document.getElementById("btn-pitch-down");
   const btnPitchUp = document.getElementById("btn-pitch-up");
@@ -243,31 +286,31 @@ function init() {
     pitchInput.blur();
   }, { capture: true });
 
-  // Ruft `action` beim Drücken sofort auf und wiederholt sie, solange der Button gedrückt bleibt.
-  function addRepeatOnHold(button, action) {
-    let delayTimer = null;
-    let repeatTimer = null;
-    const stop = () => {
-      clearTimeout(delayTimer);
-      clearInterval(repeatTimer);
-    };
-    button.addEventListener("pointerdown", event => {
-      event.preventDefault();
-      stop();
-      action();
-      delayTimer = setTimeout(() => { repeatTimer = setInterval(action, 60); }, 400);
-    });
-    ["pointerup", "pointercancel", "pointerleave"].forEach(type => button.addEventListener(type, stop));
-  }
-
   addRepeatOnHold(btnPitchDown, () => setState("a4Frequency", Math.max(1, state.a4Frequency - 1)));
   addRepeatOnHold(btnPitchUp, () => setState("a4Frequency", state.a4Frequency + 1));
 
-  mainKeyboard.onPointerNote(event => {
-    audioEngine.ensureStarted();
-    synth.handlePointerEvent(event.type, event.midi);
-  });
+  onStateChange(["a4Frequency"], updatePitchInput);
+}
 
+// Ruft `action` beim Drücken sofort auf und wiederholt sie, solange der Button gedrückt bleibt.
+function addRepeatOnHold(button, action) {
+  let delayTimer = null;
+  let repeatTimer = null;
+  const stop = () => {
+    clearTimeout(delayTimer);
+    clearInterval(repeatTimer);
+  };
+  button.addEventListener("pointerdown", event => {
+    event.preventDefault();
+    stop();
+    action();
+    delayTimer = setTimeout(() => { repeatTimer = setInterval(action, 60); }, 400);
+  });
+  ["pointerup", "pointercancel", "pointerleave"].forEach(type => button.addEventListener(type, stop));
+}
+
+// Transposition: Anzeige und Buttons.
+function setupTranspose(mainKeyboard, harmonyKeyboard, synth, updateRootHighlight) {
   const transValDisplay = document.getElementById("trans-val");
   const btnTransDown = document.getElementById("btn-trans-down");
   const btnTransUp = document.getElementById("btn-trans-up");
@@ -275,15 +318,15 @@ function init() {
   // Verschiebt beide Klaviaturen auf die neue Transposition; der Grundton wandert um `diff` mit.
   function applyTranspose(diff) {
     transValDisplay.textContent = state.transpose > 0 ? `+${state.transpose}` : state.transpose;
-    
+
     mainKeyboard.setTranspose(state.transpose);
-    
+
     harmonyKeyboard.transposeOffset = state.transpose;
     harmonyKeyboard.setRange({ startMidi: 60 + state.transpose, keyCount: 12 });
-    
+
     setState("rootMidi", clamp(state.rootMidi + diff, 0, 127));
     updateRootHighlight();
-    
+
     synth.syncAllVisuals();
   }
 
@@ -296,6 +339,14 @@ function init() {
     event.preventDefault();
     setState("transpose", state.transpose + 1);
   });
+
+  onStateChange(["transpose"], (key, value, previous) => applyTranspose(value - previous));
+}
+
+// Fullscreen-Button.
+function setupFullscreen() {
+  const appRoot = document.querySelector(".column");
+  const fullscreenButton = document.getElementById("fullscreen-toggle");
 
   function updateFullscreenButton() {
     fullscreenButton.textContent = document.fullscreenElement ? "Exit fullscreen" : "Fullscreen";
@@ -317,16 +368,6 @@ function init() {
 
   document.addEventListener("fullscreenchange", updateFullscreenButton);
   updateFullscreenButton();
-
-  document.body.addEventListener(
-    "pointerdown",
-    () => { void audioEngine.ensureStarted(); },
-    { once: true }
-  );
-
-  document.addEventListener("contextmenu", event => {
-    event.preventDefault();
-  });
 }
 
 // Prevent pinch-to-zoom and multi-touch gestures
