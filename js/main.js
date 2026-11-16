@@ -283,6 +283,7 @@ function setupPitch() {
   addRepeatOnHold(btnPitchUp, () => setState("a4Frequency", state.a4Frequency + 1));
 
   onStateChange(["a4Frequency"], updatePitchInput);
+  updatePitchInput();
 }
 
 // Ruft `action` beim Drücken sofort auf und wiederholt sie, solange der Button gedrückt bleibt.
@@ -308,9 +309,13 @@ function setupTranspose(mainKeyboard, harmonyKeyboard, synth, updateRootHighligh
   const btnTransDown = document.getElementById("btn-trans-down");
   const btnTransUp = document.getElementById("btn-trans-up");
 
+  function updateTransposeDisplay() {
+    transValDisplay.textContent = state.transpose > 0 ? `+${state.transpose}` : state.transpose;
+  }
+
   // Verschiebt beide Klaviaturen auf die neue Transposition; der Grundton wandert um `diff` mit.
   function applyTranspose(diff) {
-    transValDisplay.textContent = state.transpose > 0 ? `+${state.transpose}` : state.transpose;
+    updateTransposeDisplay();
 
     mainKeyboard.setTranspose(state.transpose);
 
@@ -334,6 +339,7 @@ function setupTranspose(mainKeyboard, harmonyKeyboard, synth, updateRootHighligh
   });
 
   onStateChange(["transpose"], (key, value, previous) => applyTranspose(value - previous));
+  updateTransposeDisplay();
 }
 
 // Fullscreen-Button.
