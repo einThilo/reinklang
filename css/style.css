@@ -8,7 +8,7 @@ html, body {
 }
 
 /* Raster: zwölf benannte Bereiche liegen direkt in #app.
-   Eine Layout-Variante ändert nur die drei grid-template-Angaben von #app.
+   Die Layout-Varianten (?layout=<name>) stehen am Ende dieser Datei.
    Obere Leiste = 4/11 der Höhe, in fünf Zeilen geteilt, damit sich die mittleren
    Spalten in Drittel (28 | 8+20 | 4+24) und die rechte in 3:2:2 (28+8 | 20+4 | 24) teilen. */
 #app {
@@ -27,21 +27,6 @@ html, body {
     "rootkeys autoroot use        release  transpose"
     "rootkeys autoroot use        release  range"
     "keyboard keyboard keyboard   keyboard keyboard";
-}
-
-/* Variante "probe" (?layout=probe): Bedienleiste unter der Hauptklaviatur.
-   Nur zum Prüfen des Umschalters, wird in L1 ersetzt. */
-body.layout-probe #app {
-  grid-template-rows:
-    minmax(0, 147fr)
-    minmax(0, 28fr) minmax(0, 8fr) minmax(0, 20fr) minmax(0, 4fr) minmax(0, 24fr);
-  grid-template-areas:
-    "keyboard keyboard keyboard   keyboard keyboard"
-    "rootkeys autoroot instrument pitch    fullscreen"
-    "rootkeys autoroot tuning     sustain  fullscreen"
-    "rootkeys autoroot tuning     sustain  transpose"
-    "rootkeys autoroot use        release  transpose"
-    "rootkeys autoroot use        release  range";
 }
 
 #app > * {
@@ -317,4 +302,89 @@ button {
   .tone-input-group input:focus {
     font-size: 16px !important;
   }
+}
+
+/* ============================================================
+   Layout-Varianten (L1), gewählt mit ?layout=<name>.
+   Entworfen für das Handy im Querformat.
+   ============================================================ */
+
+/* --- Gemeinsam für alle Varianten (jede Klasse layout-…) --- */
+
+/* Hauptklaviatur niedriger: schwarze Tasten ein Drittel kürzer, weißer Bereich darunter wie zuvor. */
+body[class*="layout-"] #keyboard {
+  --black-key-height: 50%;
+}
+
+/* Instrument und Tuning: keine Beschriftung, die Liste füllt das Feld. */
+body[class*="layout-"] .sound-control-group {
+  padding: 0;
+}
+
+body[class*="layout-"] .sound-control-group label {
+  display: none;
+}
+
+body[class*="layout-"] .sound-control-group select {
+  height: 100%;
+  flex: 1 1 auto;
+}
+
+/* Stimmton: Zahl, daneben - und + in voller Höhe, ohne Rand. */
+body[class*="layout-"] .tone-input-group {
+  align-items: stretch;
+}
+
+body[class*="layout-"] .tone-input-group input {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+  margin: 0;
+}
+
+body[class*="layout-"] .step-control {
+  flex: 2 1 0;
+  flex-direction: row-reverse;
+}
+
+body[class*="layout-"] .step-control button {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* Tastenbereich: oben << < > >>, darunter - und +, fest angeordnet. */
+body[class*="layout-"] #keyboard-tools {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+}
+
+body[class*="layout-"] #keyboard-tools [data-action="decKeys"],
+body[class*="layout-"] #keyboard-tools [data-action="incKeys"] {
+  grid-column: span 2;
+}
+
+/* Release, Sustain, Use tuning: als Knöpfe mit Rand erkennbar. */
+body[class*="layout-"] .sustain-release-half,
+body[class*="layout-"] .tuning-use-button {
+  border: 1px solid #888;
+  border-radius: 0;
+  box-sizing: border-box;
+  font-size: clamp(14px, 4vmin, 24px);
+}
+
+/* Harmonie-Automatik: kein dicker Rand rechts (liegt nicht mehr neben der Grundton-Klaviatur). */
+body[class*="layout-"] #harmony-auto {
+  border-right: none;
+}
+
+/* --- Variante "band": Leiste, darunter Band Release | Sustain | Use tuning, darunter Klaviatur --- */
+body.layout-band #app {
+  grid-template-columns: minmax(0, 35fr) minmax(0, 16fr) minmax(0, 20fr) minmax(0, 19fr) minmax(0, 10fr);
+  grid-template-rows: minmax(0, 16fr) minmax(0, 16fr) minmax(0, 17fr) minmax(0, 51fr);
+  grid-template-areas:
+    "rootkeys instrument range    transpose fullscreen"
+    "rootkeys tuning     range    pitch     autoroot"
+    "release  sustain    sustain  use       use"
+    "keyboard keyboard   keyboard keyboard  keyboard";
 }
