@@ -213,6 +213,13 @@ html, body {
   background: #d22;
 }
 
+/* Beschriftung von Buttons lässt sich nicht als Text markieren */
+button {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
 /* Sidebar and tool panels alignment */
 #edit, .transpose-group {
   justify-content: center;
