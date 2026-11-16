@@ -341,7 +341,7 @@ function setupTranspose(mainKeyboard, harmonyKeyboard, updateRootHighlight) {
 
 // Fullscreen-Button.
 function setupFullscreen() {
-  const appRoot = document.querySelector(".column");
+  const appRoot = document.getElementById("app");
   const fullscreenButton = document.getElementById("fullscreen-toggle");
 
   function updateFullscreenButton() {

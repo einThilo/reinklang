@@ -9,65 +9,56 @@
 </head>
 <body>
 
-<div class="column">
-  <div class="row weight-4">
-    <div class="row weight-8">
-      <div id="harmony-keyboard" class="weight-3"></div>
-      <div id="harmony-auto" class="weight-1">
-        <div class="auto-btn" data-mode="lowest">Tiefster</div>
-        <div class="auto-btn" data-mode="first">Erster</div>
-      </div>
-    </div>
-    <div id="sound" class="weight-2">
-      <div class="sound-control-group">
-        <label for="instrument-select">Instrument:</label>
-        <select id="instrument-select">
-        </select>
-      </div>
-      <div class="sound-control-group">
-        <label for="tuning-select">Tuning:</label>
-        <select id="tuning-select">
-        </select>
-      </div>
-      <div id="tuning-use-button" class="tuning-use-button">Use tuning</div>
-    </div>
-    <div id="pitch-sustain-release" class="weight-2">
-      <div class="tone-input-group">
-        <input type="number" id="tone-input">
-        <div class="step-control">
-          <button id="btn-pitch-up">+</button>
-          <button id="btn-pitch-down">-</button>
-        </div>
-      </div>
-      <div class="sustain-release-half" id="btn-sustain">Sustain</div>
-      <div class="sustain-release-half" id="btn-release">Release</div>
-    </div>
-    <div class="column weight-5">
-      <div id="edit" class="weight-3">
-          <button id="fullscreen-toggle" type="button">Fullscreen</button>
-      </div>
-      
-      <div class="transpose-group weight-2">
-          <button id="btn-trans-down" class="tone-btn">↓</button>
-          <div class="transpose-label">
-              <span>Transp.</span>
-              <span id="trans-val"></span>
-          </div>
-          <button id="btn-trans-up" class="tone-btn">↑</button>
-      </div>
-      
-      <div id="keyboard-tools" class="weight-2">
-        <button type="button" data-action="octDown">&lt;&lt;</button>
-        <button type="button" data-action="semiDown">&lt;</button>
-        <button type="button" data-action="semiUp">&gt;</button>
-        <button type="button" data-action="octUp">&gt;&gt;</button>
-        <button type="button" data-action="decKeys">-</button>
-        <button type="button" data-action="incKeys">+</button>
-      </div>
-    </div>
+<div id="app">
+  <div id="harmony-keyboard"></div>
+  <div id="harmony-auto">
+    <div class="auto-btn" data-mode="lowest">Tiefster</div>
+    <div class="auto-btn" data-mode="first">Erster</div>
   </div>
 
-  <div id="keyboard" class="weight-7"></div>
+  <div id="instrument" class="sound-control-group">
+    <label for="instrument-select">Instrument:</label>
+    <select id="instrument-select">
+    </select>
+  </div>
+  <div id="tuning" class="sound-control-group">
+    <label for="tuning-select">Tuning:</label>
+    <select id="tuning-select">
+    </select>
+  </div>
+  <div id="tuning-use-button" class="tuning-use-button">Use tuning</div>
+
+  <div id="pitch" class="tone-input-group">
+    <input type="number" id="tone-input">
+    <div class="step-control">
+      <button id="btn-pitch-up">+</button>
+      <button id="btn-pitch-down">-</button>
+    </div>
+  </div>
+  <div class="sustain-release-half" id="btn-sustain">Sustain</div>
+  <div class="sustain-release-half" id="btn-release">Release</div>
+
+  <button id="fullscreen-toggle" type="button">Fullscreen</button>
+
+  <div id="transpose" class="transpose-group">
+    <button id="btn-trans-down" class="tone-btn">↓</button>
+    <div class="transpose-label">
+      <span>Transp.</span>
+      <span id="trans-val"></span>
+    </div>
+    <button id="btn-trans-up" class="tone-btn">↑</button>
+  </div>
+
+  <div id="keyboard-tools">
+    <button type="button" data-action="octDown">&lt;&lt;</button>
+    <button type="button" data-action="semiDown">&lt;</button>
+    <button type="button" data-action="semiUp">&gt;</button>
+    <button type="button" data-action="octUp">&gt;&gt;</button>
+    <button type="button" data-action="decKeys">-</button>
+    <button type="button" data-action="incKeys">+</button>
+  </div>
+
+  <div id="keyboard"></div>
 </div>
 
 <script type="module" src="js/main.js"></script>

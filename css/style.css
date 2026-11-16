@@ -7,10 +7,49 @@ html, body {
   touch-action: none;
 }
 
+/* Raster: zwölf benannte Bereiche liegen direkt in #app.
+   Eine Layout-Variante ändert nur die drei grid-template-Angaben von #app.
+   Obere Leiste = 4/11 der Höhe, in fünf Zeilen geteilt, damit sich die mittleren
+   Spalten in Drittel (28 | 8+20 | 4+24) und die rechte in 3:2:2 (28+8 | 20+4 | 24) teilen. */
+#app {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  background: #eee;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 2fr) minmax(0, 2fr) minmax(0, 2fr) minmax(0, 5fr);
+  grid-template-rows:
+    minmax(0, 28fr) minmax(0, 8fr) minmax(0, 20fr) minmax(0, 4fr) minmax(0, 24fr)
+    minmax(0, 147fr);
+  grid-template-areas:
+    "rootkeys autoroot instrument pitch    fullscreen"
+    "rootkeys autoroot tuning     sustain  fullscreen"
+    "rootkeys autoroot tuning     sustain  transpose"
+    "rootkeys autoroot use        release  transpose"
+    "rootkeys autoroot use        release  range"
+    "keyboard keyboard keyboard   keyboard keyboard";
+}
+
+#app > * {
+  min-width: 0;
+  min-height: 0;
+}
+
+#harmony-keyboard  { grid-area: rootkeys; }
+#harmony-auto      { grid-area: autoroot; }
+#instrument        { grid-area: instrument; }
+#tuning            { grid-area: tuning; }
+#tuning-use-button { grid-area: use; }
+#pitch             { grid-area: pitch; }
+#btn-sustain       { grid-area: sustain; }
+#btn-release       { grid-area: release; }
+#fullscreen-toggle { grid-area: fullscreen; }
+#transpose         { grid-area: transpose; }
+#keyboard-tools    { grid-area: range; }
+#keyboard          { grid-area: keyboard; }
+
 #harmony-keyboard {
   background: #eee;
   position: relative;
-  min-width: 0;
 }
 
 #harmony-auto {
@@ -19,8 +58,6 @@ html, body {
   flex-direction: column;
   border-right: 4px solid #000;
   box-sizing: border-box;
-  min-width: 0;
-  min-height: 0;
 }
 
 .auto-btn {
@@ -54,40 +91,15 @@ html, body {
   color: #fff;
 }
 
-/* Layout containers and base blocks */
-#sound, #edit, .transpose-group, #keyboard-tools, .row, .column {
+/* Base blocks */
+.sound-control-group, .tone-input-group, .transpose-group, #keyboard-tools {
   display: flex;
-  min-width: 0;
-  min-height: 0;
-}
-
-#sound, #edit, .transpose-group, #keyboard-tools {
   background: #eee;
   box-sizing: border-box;
-}
-
-#sound {
-  flex-direction: column;
-  padding: 6px;
-  gap: 6px;
-}
-
-#pitch-sustain-release {
-  display: flex;
-  flex-direction: column;
-  background: #eee;
-  box-sizing: border-box;
-  min-height: 0;
-  min-width: 0;
 }
 
 .tone-input-group {
-  flex: 0 1 auto;
-  display: flex;
   align-items: center;
-  min-width: 0;
-  min-height: 0;
-  height: auto;
 }
 
 /* Container for vertical button stack */
@@ -112,16 +124,12 @@ html, body {
 
 /* Sound panel layout distribution */
 .sound-control-group {
-  flex: 1 1 0%;
-  min-height: 0;
-  display: flex;
   flex-direction: column;
   justify-content: center;
+  padding: 6px;
 }
 
 .tuning-use-button {
-  flex: 1 1 0%;
-  min-height: 0;
   color: #000;
 }
 
@@ -179,7 +187,7 @@ html, body {
 /* Interactive UI elements and typography */
 .sustain-release-half,
 .tuning-use-button,
-#edit button,
+#fullscreen-toggle,
 .tone-btn,
 #keyboard-tools button,
 .tone-input-group input,
@@ -202,12 +210,6 @@ html, body {
   transition: background 0.15s;
 }
 
-.sustain-release-half {
-  width: 100%;
-  box-sizing: border-box;
-  flex: 1 1 auto;
-}
-
 .tuning-use-button.selected,
 .sustain-release-half.selected {
   background: #d22;
@@ -221,21 +223,17 @@ button {
 }
 
 /* Sidebar and tool panels alignment */
-#edit, .transpose-group {
-  justify-content: center;
-  align-items: center;
-}
-
-#edit button {
+#fullscreen-toggle {
   width: 100%;
   height: 100%;
+  box-sizing: border-box;
   cursor: pointer;
 }
 
 .transpose-group {
   flex-direction: row;
-  width: 100%;
-  height: 100%;
+  justify-content: center;
+  align-items: center;
 }
 
 #keyboard-tools {
@@ -297,18 +295,6 @@ button {
 .key.black .key-label { color: #ccc; }
 .key.active.white { background: linear-gradient(to bottom, #bff 0%, #7cc 100%); }
 .key.active.black { background: linear-gradient(to bottom, #6aa 0%, #355 100%); }
-
-/* Layout grid flex modifiers */
-.row { flex-direction: row; width: 100%; height: 100%; }
-.column { flex-direction: column; width: 100%; height: 100%; }
-
-.weight-1 { flex: 1 1 0; }
-.weight-2 { flex: 2 1 0; }
-.weight-3 { flex: 3 1 0; }
-.weight-4 { flex: 4 1 0; }
-.weight-5 { flex: 5 1 0; }
-.weight-7 { flex: 7 1 0; }
-.weight-8 { flex: 8 1 0; }
 
 @media screen and (-webkit-min-device-pixel-ratio: 0) {
   .tone-input-group input:focus {
