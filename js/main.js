@@ -1,6 +1,6 @@
 import { Keyboard, clamp } from "./keyboard.js";
 import { INSTRUMENTS } from "./instruments.js";
-import { TUNINGS, midiToFrequency } from "./tuning.js";
+import { TUNINGS, frequencyFromState } from "./tuning.js";
 import { AudioEngine } from "./audio.js";
 import { SynthController, connectAutoRoot } from "./player.js";
 import { state, setState, onStateChange } from "./state.js";
@@ -39,11 +39,7 @@ function init() {
 
   const audioEngine = new AudioEngine(state.instrument);
 
-  const frequencyOf = midi => midiToFrequency(midi, {
-    a4Frequency: state.a4Frequency,
-    tuningMode: state.useTuning ? state.tuningMode : "equal",
-    tuningRootMidi: state.rootMidi
-  });
+  const frequencyOf = midi => frequencyFromState(midi, state);
 
   const synth = new SynthController(mainKeyboard, audioEngine, frequencyOf);
   synth.setSustainEnabled(state.sustain);

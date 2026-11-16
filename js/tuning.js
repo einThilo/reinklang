@@ -33,6 +33,16 @@ export function midiToFrequency(midi, settings) {
   return getTunedFrequency(midi, tuning.ratios, settings);
 }
 
+// Frequenz eines Tons aus den Einstellungen (`a4Frequency`, `tuningMode`, `useTuning`, `rootMidi`).
+// Ist „Use tuning“ aus, gilt die gleichstufige Stimmung.
+export function frequencyFromState(midi, state) {
+  return midiToFrequency(midi, {
+    a4Frequency: state.a4Frequency,
+    tuningMode: state.useTuning ? state.tuningMode : "equal",
+    tuningRootMidi: state.rootMidi
+  });
+}
+
 function getEqualTemperamentFrequency(midi, settings) {
   return settings.a4Frequency * Math.pow(2, (midi - 69) / 12);
 }

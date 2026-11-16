@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { TUNINGS, midiToFrequency } from "../js/tuning.js";
+import { TUNINGS, midiToFrequency, frequencyFromState } from "../js/tuning.js";
 
 function assertClose(actual, expected) {
   assert.ok(Math.abs(actual - expected) < 1e-9 * expected, `${actual} statt ${expected}`);
@@ -61,4 +61,13 @@ test("jede Stimmung außer der gleichstufigen hat 12 Verhältnisse und beginnt m
     assert.equal(tuning.ratios.length, 12, key);
     assert.equal(tuning.ratios[0], 1, key);
   }
+});
+
+test("frequencyFromState: ohne Use tuning gleichstufig, mit Use tuning die gewählte Stimmung zum Grundton", () => {
+  const settings = { a4Frequency: 440, tuningMode: "thilo", useTuning: false, rootMidi: 60 };
+  assertClose(frequencyFromState(64, settings), midiToFrequency(64, equal));
+  assertClose(frequencyFromState(64, { ...settings, useTuning: true }), c4 * 5 / 4);
+  assertClose(frequencyFromState(69, { ...settings, useTuning: true, rootMidi: 62 }),
+    midiToFrequency(62, equal) * 3 / 2);
+  assertClose(frequencyFromState(69, { ...settings, a4Frequency: 432 }), 432);
 });
