@@ -1,8 +1,5 @@
 import { INSTRUMENTS } from "./instruments.js";
 
-// Prototyp K1 (siehe docs/PROTOTYPEN.md): `?kompressor=aus` in der Adresse umgeht den Kompressor.
-const BYPASS_COMPRESSOR = new URLSearchParams(window.location.search).get("kompressor") === "aus";
-
 const MAX_HARMONIC = 128;
 const MIN_GAIN = 0.001;
 
@@ -108,21 +105,17 @@ export class AudioEngine {
       this.ctx = new AudioContextCtor();
 
       this.master = this.ctx.createGain();
-      this.master.gain.value = BYPASS_COMPRESSOR ? 0.1 : 0.3;
+      this.master.gain.value = 0.3;
 
-      if (BYPASS_COMPRESSOR) {
-        this.master.connect(this.ctx.destination);
-      } else {
-        this.limiter = this.ctx.createDynamicsCompressor();
-        this.limiter.threshold.value = -24.0;
-        this.limiter.knee.value = 30.0;
-        this.limiter.ratio.value = 20.0;
-        this.limiter.attack.value = 0.003;
-        this.limiter.release.value = 0.05;
+      this.limiter = this.ctx.createDynamicsCompressor();
+      this.limiter.threshold.value = -24.0;
+      this.limiter.knee.value = 30.0;
+      this.limiter.ratio.value = 20.0;
+      this.limiter.attack.value = 0.003;
+      this.limiter.release.value = 0.05;
 
-        this.master.connect(this.limiter);
-        this.limiter.connect(this.ctx.destination);
-      }
+      this.master.connect(this.limiter);
+      this.limiter.connect(this.ctx.destination);
     }
 
     if (this.ctx.state === "suspended") {
