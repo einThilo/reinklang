@@ -5,6 +5,10 @@ import { AudioEngine } from "./audio.js";
 import { SynthController, connectAutoRoot } from "./player.js";
 import { state, setState, setStates, onStateChange, LIMITS } from "./state.js";
 
+// Layout-Varianten: ?layout=<name> setzt die Klasse layout-<name> am <body>
+// (Regeln dazu in css/style.css). Ohne Zusatz oder bei unbekanntem Namen gilt die Vorgabe.
+const LAYOUTS = ["probe"];
+
 document.addEventListener("DOMContentLoaded", init);
 
 /* ============================================================
@@ -12,6 +16,8 @@ document.addEventListener("DOMContentLoaded", init);
    ============================================================ */
 
 function init() {
+  setupLayout();
+
   const mainKeyboard = new Keyboard({
     container: document.getElementById("keyboard"),
     startMidi: state.keyboardStartMidi,
@@ -337,6 +343,14 @@ function setupTranspose(mainKeyboard, harmonyKeyboard, updateRootHighlight) {
 
   onStateChange(["transpose"], applyTranspose);
   updateTransposeDisplay();
+}
+
+// Layout-Variante aus der Adresse.
+function setupLayout() {
+  const name = new URLSearchParams(location.search).get("layout");
+  if (LAYOUTS.includes(name)) {
+    document.body.classList.add(`layout-${name}`);
+  }
 }
 
 // Fullscreen-Button.

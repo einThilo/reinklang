@@ -29,6 +29,21 @@ html, body {
     "keyboard keyboard keyboard   keyboard keyboard";
 }
 
+/* Variante "probe" (?layout=probe): Bedienleiste unter der Hauptklaviatur.
+   Nur zum Prüfen des Umschalters, wird in L1 ersetzt. */
+body.layout-probe #app {
+  grid-template-rows:
+    minmax(0, 147fr)
+    minmax(0, 28fr) minmax(0, 8fr) minmax(0, 20fr) minmax(0, 4fr) minmax(0, 24fr);
+  grid-template-areas:
+    "keyboard keyboard keyboard   keyboard keyboard"
+    "rootkeys autoroot instrument pitch    fullscreen"
+    "rootkeys autoroot tuning     sustain  fullscreen"
+    "rootkeys autoroot tuning     sustain  transpose"
+    "rootkeys autoroot use        release  transpose"
+    "rootkeys autoroot use        release  range";
+}
+
 #app > * {
   min-width: 0;
   min-height: 0;
