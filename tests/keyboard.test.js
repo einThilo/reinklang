@@ -78,3 +78,22 @@ test("Grundton-Markierung wechselt und bleibt beim Neuaufbau erhalten", () => {
   assert.equal(has(keyboard, 67, "active"), true);
   assert.equal(has(keyboard, 64, "active"), false);
 });
+
+test("Transposition kommt über Konstruktor und setRange und verschiebt die Farben", () => {
+  const keyboard = createKeyboard({ startMidi: 60, keyCount: 12, transposeOffset: 2 });
+  assert.equal(has(keyboard, 62, "white"), true); // klingt D, sieht aus wie C
+  assert.equal(has(keyboard, 63, "black"), true); // klingt D#, sieht aus wie C#
+
+  keyboard.setHeldState(62, true);
+  keyboard.setRange({ transposeOffset: 1 });
+
+  assert.equal(keyboard.transposeOffset, 1);
+  assert.equal(keyboard.startMidi, 60);
+  assert.equal(keyboard.keyCount, 12);
+  assert.equal(has(keyboard, 61, "white"), true);
+  assert.equal(has(keyboard, 62, "black"), true);
+  assert.equal(has(keyboard, 62, "held"), true);
+
+  keyboard.setRange({ startMidi: 50 });
+  assert.equal(keyboard.transposeOffset, 1);
+});

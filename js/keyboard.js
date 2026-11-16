@@ -7,10 +7,11 @@ export class Keyboard {
     this.container = options.container;
     this.startMidi = options.startMidi ?? 60;
     this.keyCount = options.keyCount ?? 24;
+    // Verschiebt die Farben (weiß/schwarz) gegenüber den klingenden Tönen.
+    this.transposeOffset = options.transposeOffset ?? 0;
 
     this.keys = [];
     this.keyElements = new Map();
-    this.transposeOffset = 0;
 
     // Markierungen, die beim Neuaufbau der Tasten wieder gesetzt werden.
     this.heldMidis = new Set();
@@ -38,13 +39,18 @@ export class Keyboard {
     return whiteIndices.includes(((offsetMidi % 12) + 12) % 12);
   }
 
-  setRange({ startMidi = this.startMidi, keyCount = this.keyCount } = {}) {
+  setRange({
+    startMidi = this.startMidi,
+    keyCount = this.keyCount,
+    transposeOffset = this.transposeOffset
+  } = {}) {
     const nextStartMidi = clamp(Math.round(startMidi), 0, 127);
     const maxKeyCount = 128 - nextStartMidi;
     const nextKeyCount = clamp(Math.round(keyCount), 1, maxKeyCount);
 
     this.startMidi = nextStartMidi;
     this.keyCount = nextKeyCount;
+    this.transposeOffset = transposeOffset;
 
     this.createKeys();
     this.layoutKeys();
@@ -112,12 +118,6 @@ export class Keyboard {
         element.style.height = "60%";
       }
     });
-  }
-
-  setTranspose(offset) {
-    this.transposeOffset = offset;
-    this.createKeys();
-    this.layoutKeys();
   }
 
   onPointerNote(callback) {

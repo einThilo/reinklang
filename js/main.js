@@ -15,13 +15,14 @@ function init() {
   const mainKeyboard = new Keyboard({
     container: document.getElementById("keyboard"),
     startMidi: state.keyboardStartMidi,
-    keyCount: state.keyboardKeyCount
+    keyCount: state.keyboardKeyCount,
+    transposeOffset: state.transpose
   });
 
   const harmonyKeyboard = new Keyboard({
     container: document.getElementById("harmony-keyboard"),
-    startMidi: 60,
-    keyCount: 12
+    ...harmonyRange(),
+    transposeOffset: state.transpose
   });
 
   const audioEngine = new AudioEngine(state.instrument);
@@ -67,6 +68,11 @@ function init() {
   document.addEventListener("contextmenu", event => {
     event.preventDefault();
   });
+}
+
+// Bereich der Grundton-Klaviatur: eine Oktave ab dem (transponierten) C4.
+function harmonyRange() {
+  return { startMidi: 60 + state.transpose, keyCount: 12 };
 }
 
 /* ============================================================
@@ -313,10 +319,8 @@ function setupTranspose(mainKeyboard, harmonyKeyboard, updateRootHighlight) {
   function applyTranspose() {
     updateTransposeDisplay();
 
-    mainKeyboard.setTranspose(state.transpose);
-
-    harmonyKeyboard.transposeOffset = state.transpose;
-    harmonyKeyboard.setRange({ startMidi: 60 + state.transpose, keyCount: 12 });
+    mainKeyboard.setRange({ transposeOffset: state.transpose });
+    harmonyKeyboard.setRange({ ...harmonyRange(), transposeOffset: state.transpose });
 
     updateRootHighlight();
   }
