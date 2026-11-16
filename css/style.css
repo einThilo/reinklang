@@ -399,3 +399,38 @@ body.layout-band-unten #app {
     "keyboard keyboard   keyboard keyboard  keyboard"
     "release  sustain    sustain  use       use";
 }
+
+/* --- Varianten "ecke" und "ecken": Spielknöpfe groß in der höheren Leiste, Einstellungen in vier Zeilen --- */
+
+/* Tiefster und Erster nebeneinander. */
+body.layout-ecke #harmony-auto,
+body.layout-ecken #harmony-auto {
+  flex-direction: row;
+}
+
+body.layout-ecke .auto-btn,
+body.layout-ecken .auto-btn {
+  justify-content: center;
+  padding-left: 0;
+  border-bottom: none;
+  border-right: 2px solid #111;
+}
+
+body.layout-ecke .auto-btn:last-child,
+body.layout-ecken .auto-btn:last-child {
+  border-right: none;
+}
+
+/* "ecke": Release/Sustain und Use tuning am linken Ende der Leiste. */
+body.layout-ecke #app {
+  grid-template-columns:
+    minmax(0, 12fr) minmax(0, 10fr) minmax(0, 35fr)
+    minmax(0, 14.33fr) minmax(0, 7.17fr) minmax(0, 21.5fr);
+  grid-template-rows: repeat(4, minmax(0, 12.25fr)) minmax(0, 51fr);
+  grid-template-areas:
+    "release  use      rootkeys instrument instrument tuning"
+    "release  use      rootkeys range      range      transpose"
+    "sustain  use      rootkeys range      range      pitch"
+    "sustain  use      rootkeys fullscreen autoroot   autoroot"
+    "keyboard keyboard keyboard keyboard   keyboard   keyboard";
+}
