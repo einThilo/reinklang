@@ -3,7 +3,7 @@ import { INSTRUMENTS } from "./instruments.js";
 import { TUNINGS, frequencyFromState } from "./tuning.js";
 import { AudioEngine } from "./audio.js";
 import { SynthController, connectAutoRoot } from "./player.js";
-import { state, setState, onStateChange } from "./state.js";
+import { state, setState, setStates, onStateChange, LIMITS } from "./state.js";
 
 document.addEventListener("DOMContentLoaded", init);
 
@@ -75,29 +75,19 @@ function init() {
 
 // Tastenbereich der Hauptklaviatur: unterster Ton und Tastenanzahl.
 function setupKeyboardRange(mainKeyboard, synth) {
-  // Setzt den Tastenbereich der Hauptklaviatur, begrenzt auf gültige Werte.
-  function setKeyboardRange(startMidi, keyCount) {
-    const start = clamp(Math.round(startMidi), 0, 127);
-    setState("keyboardStartMidi", start);
-    setState("keyboardKeyCount", clamp(Math.round(keyCount), 1, 128 - start));
-  }
-
-  // Verschiebt den untersten Ton nur so weit, dass die bisherige Tastenanzahl noch passt.
+  // Verschiebt den untersten Ton nur so weit, dass die bisherige Tastenanzahl noch passt
+  // (die übrigen Grenzen setzt `state.js`).
   function moveKeyboardStart(delta) {
-    const start = clamp(state.keyboardStartMidi + delta, 0, 128 - state.keyboardKeyCount);
-    setState("keyboardStartMidi", start);
+    setState("keyboardStartMidi", Math.min(state.keyboardStartMidi + delta, 128 - state.keyboardKeyCount));
   }
 
   function handleRangeAction(action) {
-    const start = state.keyboardStartMidi;
-    const count = state.keyboardKeyCount;
-
     switch (action) {
       case "decKeys":
-        setKeyboardRange(start, count - 1);
+        setState("keyboardKeyCount", state.keyboardKeyCount - 1);
         break;
       case "incKeys":
-        setKeyboardRange(start, count + 1);
+        setState("keyboardKeyCount", state.keyboardKeyCount + 1);
         break;
       case "octDown":
         moveKeyboardStart(-12);
@@ -257,10 +247,10 @@ function setupPitch() {
   }
 
   // Der Stimmton wird erst beim Abschicken übernommen (Enter oder Tipp außerhalb des Felds);
-  // ungültige Eingaben springen auf den bisherigen Wert zurück.
+  // ein leeres Feld springt auf den bisherigen Wert zurück, Zahlen außerhalb der Grenzen auf die Grenze.
   pitchInput.addEventListener("change", () => {
     const val = Number(pitchInput.value);
-    if (pitchInput.value !== "" && val > 0) setState("a4Frequency", val);
+    if (pitchInput.value !== "" && Number.isFinite(val)) setState("a4Frequency", val);
     pitchInput.value = state.a4Frequency;
   });
 
@@ -279,7 +269,7 @@ function setupPitch() {
     pitchInput.blur();
   }, { capture: true });
 
-  addRepeatOnHold(btnPitchDown, () => setState("a4Frequency", Math.max(1, state.a4Frequency - 1)));
+  addRepeatOnHold(btnPitchDown, () => setState("a4Frequency", state.a4Frequency - 1));
   addRepeatOnHold(btnPitchUp, () => setState("a4Frequency", state.a4Frequency + 1));
 
   onStateChange(["a4Frequency"], updatePitchInput);
@@ -313,8 +303,15 @@ function setupTranspose(mainKeyboard, harmonyKeyboard, synth, updateRootHighligh
     transValDisplay.textContent = state.transpose > 0 ? `+${state.transpose}` : state.transpose;
   }
 
-  // Verschiebt beide Klaviaturen auf die neue Transposition; der Grundton wandert um `diff` mit.
-  function applyTranspose(diff) {
+  // Ändert die Transposition innerhalb ihrer Grenzen; der Grundton wandert in einem Schritt um
+  // dieselbe Differenz mit.
+  function transposeBy(delta) {
+    const next = clamp(state.transpose + delta, LIMITS.transpose.min, LIMITS.transpose.max);
+    setStates({ transpose: next, rootMidi: state.rootMidi + next - state.transpose });
+  }
+
+  // Verschiebt beide Klaviaturen auf die neue Transposition.
+  function applyTranspose() {
     updateTransposeDisplay();
 
     mainKeyboard.setTranspose(state.transpose);
@@ -322,7 +319,6 @@ function setupTranspose(mainKeyboard, harmonyKeyboard, synth, updateRootHighligh
     harmonyKeyboard.transposeOffset = state.transpose;
     harmonyKeyboard.setRange({ startMidi: 60 + state.transpose, keyCount: 12 });
 
-    setState("rootMidi", clamp(state.rootMidi + diff, 0, 127));
     updateRootHighlight();
 
     synth.syncAllVisuals();
@@ -330,15 +326,15 @@ function setupTranspose(mainKeyboard, harmonyKeyboard, synth, updateRootHighligh
 
   btnTransDown.addEventListener("pointerdown", event => {
     event.preventDefault();
-    setState("transpose", state.transpose - 1);
+    transposeBy(-1);
   });
 
   btnTransUp.addEventListener("pointerdown", event => {
     event.preventDefault();
-    setState("transpose", state.transpose + 1);
+    transposeBy(1);
   });
 
-  onStateChange(["transpose"], (key, value, previous) => applyTranspose(value - previous));
+  onStateChange(["transpose"], applyTranspose);
   updateTransposeDisplay();
 }
 
