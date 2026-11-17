@@ -27,7 +27,7 @@ function createElement() {
 }
 globalThis.document = { createElement };
 
-const { Keyboard } = await import("../js/keyboard.js");
+const { Keyboard, keyPositions } = await import("../js/keyboard.js");
 
 function createKeyboard(options) {
   return new Keyboard({ container: createElement(), ...options });
@@ -96,4 +96,54 @@ test("Transposition kommt über Konstruktor und setRange und verschiebt die Farb
 
   keyboard.setRange({ startMidi: 50 });
   assert.equal(keyboard.transposeOffset, 1);
+});
+
+// --- keyPositions ---
+
+const W = { isWhite: true };
+const B = { isWhite: false };
+const close = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} statt ${expected}`);
+
+test("keyPositions (Vorgabe): weiße Tasten teilen die Breite, schwarze sitzen auf der Grenze", () => {
+  const positions = keyPositions([W, B, W, W]);
+  assert.deepEqual(positions[0], { left: 0, width: (1 / 3) * 100 });
+  assert.deepEqual(positions[1], { left: ((1 - 0.45) / 3) * 100, width: (0.9 / 3) * 100 });
+  assert.deepEqual(positions[2], { left: (1 / 3) * 100, width: (1 / 3) * 100 });
+  assert.deepEqual(positions[3], { left: (2 / 3) * 100, width: (1 / 3) * 100 });
+});
+
+test("keyPositions (Vorgabe): schwarze Randtaste ragt zur Hälfte hinaus, ohne weiße Taste keine Lage (S10, S11)", () => {
+  const positions = keyPositions([B, W, B]);
+  assert.ok(positions[0].left < 0);
+  assert.ok(positions[2].left + positions[2].width > 100);
+  assert.deepEqual(keyPositions([B]), []);
+  assert.deepEqual(keyPositions([]), []);
+});
+
+test("keyPositions mit fullEdgeKeys: schwarze Randtasten liegen ganz im Bereich (S11.1)", () => {
+  const positions = keyPositions([B, W, B], true);
+  close(positions[0].left, 0);
+  close(positions[2].left + positions[2].width, 100);
+  // Die weiße Taste liegt mittig, die schwarzen überdecken ihre Ränder wie sonst auch.
+  close(positions[1].left + positions[1].width / 2, 50);
+  close(positions[0].left + positions[0].width / 2, positions[1].left);
+});
+
+test("keyPositions mit fullEdgeKeys: eine einzelne schwarze Taste füllt die Breite, weiße Ränder bleiben wie in der Vorgabe (S10)", () => {
+  const [only] = keyPositions([B], true);
+  close(only.left, 0);
+  close(only.width, 100);
+  assert.deepEqual(keyPositions([W, B, W], true), keyPositions([W, B, W]));
+});
+
+test("Keyboard gibt die Lage als Prozentwerte an die Tasten weiter", () => {
+  const keyboard = createKeyboard({ startMidi: 60, keyCount: 3 });
+  assert.equal(keyboard.keyElements.get(60).style.left, "0%");
+  assert.equal(keyboard.keyElements.get(60).style.width, "50%");
+  assert.equal(keyboard.keyElements.get(60).style.height, "100%");
+  assert.equal(keyboard.keyElements.get(61).style.left, ((1 - 0.45) / 2) * 100 + "%");
+  assert.equal(keyboard.keyElements.get(61).style.height, undefined);
+
+  const full = createKeyboard({ startMidi: 61, keyCount: 1, fullEdgeKeys: true });
+  assert.equal(full.keyElements.get(61).style.width, "100%");
 });
