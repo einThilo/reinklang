@@ -5,7 +5,8 @@ export const SWITCHES = {
   start: ["tippen"],
   sustain: ["pedal"],
   wechsel: ["weich"],
-  grundton: ["haeuser"]
+  grundton: ["haeuser"],
+  abweichung: ["1"]
 };
 
 export function readOptions(search) {

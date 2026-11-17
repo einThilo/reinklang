@@ -502,3 +502,49 @@ body.grundton-haeuser #harmony-keyboard .key.black .key-label {
   top: 4px;
   bottom: auto;
 }
+
+/* Z1.1 (?abweichung=1): Abweichung von der gleichstufigen Stimmung auf den Grundton-Tasten.
+   Graue Linie in der Tastenmitte = gleichstufig, rote Linie = aktuelle Stimmung (Ränder = ±50 Cent). */
+.deviation {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.deviation::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: #999;
+}
+
+.deviation-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: #d22;
+}
+
+.deviation-value {
+  position: absolute;
+  top: 62%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 1px;
+  font-size: 10px;
+  font-weight: bold;
+  white-space: nowrap;
+  color: #b00;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.key.black .deviation-value {
+  top: 38%;
+  color: #faa;
+  background: rgba(0, 0, 0, 0.7);
+}

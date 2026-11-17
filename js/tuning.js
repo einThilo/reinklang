@@ -43,6 +43,26 @@ export function frequencyFromState(midi, state) {
   });
 }
 
+// Abweichung eines Tons von der gleichstufigen Stimmung in Cent (100 Cent = ein Halbton),
+// aus denselben Einstellungen wie `frequencyFromState`. Ohne „Use tuning“ ist sie 0.
+export function centsFromEqual(midi, state) {
+  return 1200 * Math.log2(frequencyFromState(midi, state) / getEqualTemperamentFrequency(midi, state));
+}
+
+// Lage der Abweichungs-Linie auf einer Taste in Prozent der Tastenbreite:
+// Mitte = 0 Cent, Ränder = ±50 Cent, größere Abweichungen bleiben am Rand.
+export function deviationPosition(cents) {
+  return Math.max(0, Math.min(100, 50 + cents));
+}
+
+// Abweichung als Text in ganzen Cent mit Vorzeichen, z. B. „+2“, „−14“, „0“.
+export function formatCents(cents) {
+  const rounded = Math.round(cents);
+  if (rounded > 0) return `+${rounded}`;
+  if (rounded < 0) return `−${-rounded}`;
+  return "0";
+}
+
 function getEqualTemperamentFrequency(midi, settings) {
   return settings.a4Frequency * Math.pow(2, (midi - 69) / 12);
 }

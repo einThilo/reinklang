@@ -1,6 +1,6 @@
 import { Keyboard, clamp } from "./keyboard.js";
 import { INSTRUMENTS } from "./instruments.js";
-import { TUNINGS, frequencyFromState } from "./tuning.js";
+import { TUNINGS, frequencyFromState, centsFromEqual, deviationPosition, formatCents } from "./tuning.js";
 import { AudioEngine } from "./audio.js";
 import { SynthController, connectAutoRoot } from "./player.js";
 import { state, setState, setStates, onStateChange, LIMITS } from "./state.js";
@@ -68,6 +68,7 @@ function init() {
   setupPitch();
   setupTranspose(mainKeyboard, harmonyKeyboard, updateRootHighlight);
   setupFullscreen();
+  if (options.abweichung) setupDeviation(harmonyKeyboard);
 
   if (options.start === "tippen") setupStartOverlay(audioEngine);
 
@@ -401,6 +402,35 @@ function setupStartOverlay(audioEngine) {
     overlay.remove();
   });
   document.body.appendChild(overlay);
+}
+
+// Prototyp Z1.1 (`?abweichung=1`): zeigt bei „Use tuning“ auf jeder Grundton-Taste eine graue Linie
+// in der Mitte (gleichstufig), eine rote Linie für die aktuelle Stimmung und die Abweichung in Cent.
+// Muss nach `setupTranspose` angemeldet werden: Die Transposition baut die Tasten neu auf.
+function setupDeviation(harmonyKeyboard) {
+  function renderDeviations() {
+    for (const [midi, keyElement] of harmonyKeyboard.keyElements) {
+      keyElement.querySelector(".deviation")?.remove();
+      if (!state.useTuning) continue;
+
+      const cents = centsFromEqual(midi, state);
+      const box = document.createElement("div");
+      box.className = "deviation";
+      const marker = document.createElement("div");
+      marker.className = "deviation-marker";
+      marker.style.left = deviationPosition(cents) + "%";
+      const value = document.createElement("div");
+      value.className = "deviation-value";
+      value.textContent = formatCents(cents);
+
+      marker.appendChild(value);
+      box.appendChild(marker);
+      keyElement.appendChild(box);
+    }
+  }
+
+  onStateChange(["rootMidi", "tuningMode", "useTuning", "transpose"], renderDeviations);
+  renderDeviations();
 }
 
 // Layout-Variante aus der Adresse.

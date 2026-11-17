@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { TUNINGS, midiToFrequency, frequencyFromState } from "../js/tuning.js";
+import { TUNINGS, midiToFrequency, frequencyFromState, centsFromEqual, deviationPosition, formatCents } from "../js/tuning.js";
 
 function assertClose(actual, expected) {
   assert.ok(Math.abs(actual - expected) < 1e-9 * expected, `${actual} statt ${expected}`);
@@ -70,4 +70,33 @@ test("frequencyFromState: ohne Use tuning gleichstufig, mit Use tuning die gewä
   assertClose(frequencyFromState(69, { ...settings, useTuning: true, rootMidi: 62 }),
     midiToFrequency(62, equal) * 3 / 2);
   assertClose(frequencyFromState(69, { ...settings, a4Frequency: 432 }), 432);
+});
+
+test("centsFromEqual: ohne Use tuning 0, mit Use tuning die Abweichung der Stimmung zum Grundton", () => {
+  const settings = { a4Frequency: 440, tuningMode: "thilo", useTuning: false, rootMidi: 60 };
+  assert.equal(centsFromEqual(64, settings), 0);
+
+  const tuned = { ...settings, useTuning: true };
+  const close = (actual, expected) => assert.ok(Math.abs(actual - expected) < 0.01, `${actual} statt ${expected}`);
+  close(centsFromEqual(60, tuned), 0);
+  close(centsFromEqual(64, tuned), -13.69);  // große Terz 5/4
+  close(centsFromEqual(67, tuned), 1.96);    // Quinte 3/2
+  close(centsFromEqual(70, tuned), -31.17);  // Septime 7/4
+  close(centsFromEqual(76, tuned), -13.69);  // eine Oktave höher gleich
+  close(centsFromEqual(64, { ...tuned, rootMidi: 62 }), 3.91);  // große Sekunde 9/8 über D
+});
+
+test("deviationPosition: Mitte bei 0 Cent, Ränder bei ±50 Cent, darüber hinaus abgeschnitten", () => {
+  assert.equal(deviationPosition(0), 50);
+  assert.equal(deviationPosition(-50), 0);
+  assert.equal(deviationPosition(25), 75);
+  assert.equal(deviationPosition(51.3), 100);
+  assert.equal(deviationPosition(-80), 0);
+});
+
+test("formatCents: ganze Cent mit Vorzeichen", () => {
+  assert.equal(formatCents(1.96), "+2");
+  assert.equal(formatCents(-13.69), "−14");
+  assert.equal(formatCents(0.3), "0");
+  assert.equal(formatCents(-0.3), "0");
 });
