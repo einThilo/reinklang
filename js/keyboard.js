@@ -18,7 +18,6 @@ export class Keyboard {
     // Markierungen, die beim Neuaufbau der Tasten wieder gesetzt werden.
     this.heldMidis = new Set();
     this.activeMidis = new Set();
-    this.highlightedMidi = null;
 
     this.rootElement = document.createElement("div");
     this.rootElement.className = "keyboard";
@@ -94,7 +93,7 @@ export class Keyboard {
     const element = this.keyElements.get(midi);
     if (!element) return;
     element.classList.toggle("held", this.heldMidis.has(midi));
-    element.classList.toggle("active", this.activeMidis.has(midi) || this.highlightedMidi === midi);
+    element.classList.toggle("active", this.activeMidis.has(midi));
   }
 
   layoutKeys() {
@@ -195,13 +194,6 @@ export class Keyboard {
   setActiveState(midi, active) {
     if (active) this.activeMidis.add(midi);
     else this.activeMidis.delete(midi);
-    this.applyMarks(midi);
-  }
-
-  highlightHarmonyKey(midi) {
-    const previous = this.highlightedMidi;
-    this.highlightedMidi = midi;
-    if (previous !== null) this.applyMarks(previous);
     this.applyMarks(midi);
   }
 }
