@@ -541,28 +541,37 @@ body.layout-band-gruppe .auto-btn {
   touch-action: none;
 }
 
-/* Grundton-Tasten als „Häuser“ (L6.1). Weiße Tasten: flache Unterkante, senkrechte
-   Seiten, Dachspitze in der Mitte (Dachansatz bei 60 %, Spitze bei 36 % der Höhe). Schwarze Tasten:
-   umgedreht, so breit wie die weißen, Spitze knapp über dem Tal zwischen zwei Dächern. Lage und Breite
-   setzt harmony.js. Die Form begrenzt auch die Fläche, die auf Berührung reagiert. */
+/* Grundton-Tasten als „Häuser“ (L6.1, L7). Alle Häuser sind gleich hoch (61 % der Höhe), eine weiße
+   Taste breit und gleich gefärbt; Lage und Breite setzt harmony.js. Untere Häuser (weiße Tasten):
+   flache Unterkante, senkrechte Seiten, Dach von 63 % bis zur Spitze bei 39 % der Höhe. Obere Häuser
+   (schwarze Tasten und Sonderhäuser): umgedreht, Dach von 37 % bis zur Spitze bei 61 %; zwischen
+   den Reihen bleiben 2 % Abstand. Die Form begrenzt auch die Fläche, die auf Berührung reagiert. */
 #harmony-keyboard .keyboard {
-  background: #666;
+  background: #333;
 }
 
 #harmony-keyboard .key {
+  height: 61%;
+  background: #8a9aa6;
   border: none;
   border-radius: 0;
   box-shadow: none;
 }
 
+#harmony-keyboard .key.active {
+  background: #1fb5b5;
+}
+
 #harmony-keyboard .key.white {
-  height: 100%;
-  clip-path: polygon(1px 100%, 1px 60%, 50% 36%, calc(100% - 1px) 60%, calc(100% - 1px) 100%);
+  top: 39%;
+  /* Dachansatz: (63 - 39) / 61 der Haushöhe */
+  clip-path: polygon(1px 100%, 1px 39.34%, 50% 0, calc(100% - 1px) 39.34%, calc(100% - 1px) 100%);
 }
 
 #harmony-keyboard .key.black {
-  height: 58%;
-  clip-path: polygon(1px 0, calc(100% - 1px) 0, calc(100% - 1px) 58.6%, 50% 100%, 1px 58.6%);
+  top: 0;
+  /* Dachansatz: 37 / 61 der Haushöhe */
+  clip-path: polygon(1px 0, calc(100% - 1px) 0, calc(100% - 1px) 60.66%, 50% 100%, 1px 60.66%);
 }
 
 /* Abweichung (Z1.1): Abweichung von der gleichstufigen Stimmung auf den Grundton-Tasten.
@@ -599,6 +608,4 @@ body.layout-band-gruppe .auto-btn {
 .key.black .deviation-value {
   top: 4px;
   bottom: auto;
-  color: #faa;
-  background: rgba(0, 0, 0, 0.7);
 }
