@@ -1,0 +1,15 @@
+// Schalter für Prototypen aus der Adresse (?name=wert). Es gelten nur die hier genannten Namen
+// und Werte; alles andere ergibt null, also die Vorgabe. Beschreibung je Schalter: docs/PROTOTYPEN.md.
+export const SWITCHES = {
+  sperren: ["aus"]
+};
+
+export function readOptions(search) {
+  const params = new URLSearchParams(search);
+  const options = {};
+  for (const [name, values] of Object.entries(SWITCHES)) {
+    const value = params.get(name);
+    options[name] = values.includes(value) ? value : null;
+  }
+  return options;
+}

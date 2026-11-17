@@ -4,6 +4,10 @@ import { TUNINGS, frequencyFromState } from "./tuning.js";
 import { AudioEngine } from "./audio.js";
 import { SynthController, connectAutoRoot } from "./player.js";
 import { state, setState, setStates, onStateChange, LIMITS } from "./state.js";
+import { readOptions } from "./options.js";
+
+// Schalter für Prototypen (?name=wert), siehe options.js.
+const options = readOptions(location.search);
 
 // Layout-Varianten: ?layout=<name> setzt die Klasse layout-<name> am <body>
 // (Regeln dazu in css/style.css). Ohne Zusatz oder bei unbekanntem Namen gilt die Vorgabe.
@@ -385,20 +389,22 @@ function setupFullscreen() {
   updateFullscreenButton();
 }
 
-// Prevent pinch-to-zoom and multi-touch gestures
-document.addEventListener('touchstart', (e) => {
-  if (e.touches.length > 1) {
-    e.preventDefault();
-  }
-}, { passive: false });
+// Berührungssperren gegen Zoomen; `?sperren=aus` lässt sie weg (Prototyp S2.1).
+if (options.sperren !== "aus") {
+  // Prevent pinch-to-zoom and multi-touch gestures
+  document.addEventListener('touchstart', (e) => {
+    if (e.touches.length > 1) {
+      e.preventDefault();
+    }
+  }, { passive: false });
 
-// Prevent double-tap-to-zoom on rapid interactions
-let lastTouchEnd = 0;
-document.addEventListener('touchend', (e) => {
-  const now = Date.now();
-  if (now - lastTouchEnd <= 300) {
-    e.preventDefault();
-  }
-  lastTouchEnd = now;
-}, { passive: false });
-
+  // Prevent double-tap-to-zoom on rapid interactions
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300) {
+      e.preventDefault();
+    }
+    lastTouchEnd = now;
+  }, { passive: false });
+}
