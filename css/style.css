@@ -497,6 +497,29 @@ body.layout-klassisch-2 .tone-input-group input {
   font-size: clamp(16px, 5vmin, 28px);
 }
 
+/* --- Variante "band-gruppe" (L1.2): wie "band", rechts untereinander Tuning, Stimmton | Transposition,
+   Use tuning; Fullscreen und Harmonie-Automatik klein unter dem Instrument. --- */
+body.layout-band-gruppe #app {
+  grid-template-columns:
+    minmax(0, 35fr) minmax(0, 8fr) minmax(0, 8fr)
+    minmax(0, 20fr) minmax(0, 14.5fr) minmax(0, 14.5fr);
+  grid-template-rows: minmax(0, 16fr) minmax(0, 16fr) minmax(0, 17fr) minmax(0, 51fr);
+  grid-template-areas:
+    "rootkeys instrument instrument range    tuning   tuning"
+    "rootkeys fullscreen autoroot   range    pitch    transpose"
+    "release  sustain    sustain    sustain  use      use"
+    "keyboard keyboard   keyboard   keyboard keyboard keyboard";
+}
+
+body.layout-band-gruppe #fullscreen-toggle {
+  padding: 0;
+  font-size: clamp(10px, 2vmin, 16px);
+}
+
+body.layout-band-gruppe .auto-btn {
+  padding-left: 4px;
+}
+
 /* ============================================================
    Prototypen, gewählt mit ?name=wert (siehe js/options.js).
    ============================================================ */
