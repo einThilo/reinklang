@@ -43,7 +43,11 @@ export function setStates(changes) {
   Object.keys(changes).forEach(checkKey);
 
   const next = { ...state, ...changes };
-  for (const key of Object.keys(LIMITS)) next[key] = limit(key, next[key], next);
+  for (const key of Object.keys(LIMITS)) {
+    // Was keine Zahl ist (auch `NaN`), wird nicht übernommen; der bisherige Wert bleibt.
+    if (typeof next[key] !== "number" || Number.isNaN(next[key])) next[key] = state[key];
+    next[key] = limit(key, next[key], next);
+  }
 
   const changed = Object.keys(state).filter(key => next[key] !== state[key]);
   const previous = Object.fromEntries(changed.map(key => [key, state[key]]));

@@ -138,3 +138,20 @@ test("setStates wirft bei unbekanntem Namen und ändert dann nichts", () => {
   assert.throws(() => setStates({ transpose: 1, grundton: 3 }), /grundton/);
   assert.deepEqual(state, before);
 });
+
+test("Werte mit Grenzen nehmen nur Zahlen an; sonst bleibt der bisherige Wert (S12)", () => {
+  setState("a4Frequency", 440);
+  setState("rootMidi", 60);
+  const transposeBefore = state.transpose;
+  const seen = [];
+  onStateChange((key, value) => seen.push([key, value]));
+
+  setState("a4Frequency", NaN);
+  setState("rootMidi", "abc");
+  setStates({ transpose: undefined, rootMidi: NaN });
+
+  assert.equal(state.a4Frequency, 440);
+  assert.equal(state.rootMidi, 60);
+  assert.equal(state.transpose, transposeBefore);
+  assert.deepEqual(seen, []);
+});
