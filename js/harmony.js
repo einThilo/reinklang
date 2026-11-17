@@ -29,6 +29,7 @@ export class HarmonyKeyboard {
   constructor({ container, startMidi = 60 }) {
     this.houses = houseLayout();
     this.highlightedMidi = null;
+    this.highlightPale = false;
     // Ton → Element, nur die 12 Tonhäuser; wird bei `setStart` neu belegt.
     this.keyElements = new Map();
     // Name des Sonderhauses („left“, „middle“, „right“) → Element.
@@ -69,14 +70,18 @@ export class HarmonyKeyboard {
     this.applyHighlight();
   }
 
-  highlight(midi) {
+  // Markiert ein Tonhaus (null: keins); `pale` markiert es blass statt kräftig.
+  highlight(midi, pale = false) {
     this.highlightedMidi = midi;
+    this.highlightPale = pale;
     this.applyHighlight();
   }
 
   applyHighlight() {
     for (const [midi, element] of this.keyElements) {
-      element.classList.toggle("active", midi === this.highlightedMidi);
+      const marked = midi === this.highlightedMidi;
+      element.classList.toggle("active", marked);
+      element.classList.toggle("pale", marked && this.highlightPale);
     }
   }
 

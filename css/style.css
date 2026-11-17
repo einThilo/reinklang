@@ -483,6 +483,10 @@ body.layout-band-gruppe #fullscreen-toggle {
   background: #1fb5b5;
 }
 
+#harmony-keyboard .key.active.pale {
+  background: #a6e0e0;
+}
+
 #harmony-keyboard .key.white {
   top: 39%;
   /* Dachansatz: (63 - 39) / 61 der Haushöhe */

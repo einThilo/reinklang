@@ -73,3 +73,14 @@ test("Grundton-Markierung wechselt und bleibt nach setStart am selben Ton", () =
   keyboard.setStart(61);
   assert.equal(keyboard.keyElements.get(67).classList.contains("active"), true);
 });
+
+test("Markierung blass oder gar keine", () => {
+  const keyboard = new HarmonyKeyboard({ container: createElement(), startMidi: 60 });
+  const classes = midi => ["active", "pale"].filter(name => keyboard.keyElements.get(midi).classList.contains(name));
+  keyboard.highlight(64, true);
+  assert.deepEqual(classes(64), ["active", "pale"]);
+  keyboard.highlight(64);
+  assert.deepEqual(classes(64), ["active"]);
+  keyboard.highlight(null);
+  assert.deepEqual(classes(64), []);
+});

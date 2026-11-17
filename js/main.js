@@ -54,12 +54,13 @@ function init() {
     synth.handlePointerEvent(event.type, event.midi);
   });
 
-  // Markiert den Grundton auf der Grundton-Klaviatur (in deren Oktave).
+  // Markiert den Grundton auf der Grundton-Klaviatur (in deren Oktave): kräftig, wenn er von Hand
+  // gewählt ist, blass, wenn die Automatik ihn gefunden hat; bei ausgeschaltetem Tuning gar nicht.
   function updateRootHighlight() {
     const start = harmonyKeyboard.startMidi;
     const displayMidi = start + (((state.rootMidi - start) % 12) + 12) % 12;
 
-    harmonyKeyboard.highlight(displayMidi);
+    harmonyKeyboard.highlight(state.useTuning ? displayMidi : null, state.harmonyMode !== "manual");
   }
 
   setupKeyboardRange(mainKeyboard);
@@ -170,7 +171,7 @@ function setupHarmony(harmonyKeyboard, updateRootHighlight) {
   function updateSpecialHouses() {
     for (const [name, { mode }] of Object.entries(SPECIAL_HOUSES)) {
       const element = harmonyKeyboard.specialElements.get(name);
-      if (mode) element.classList.toggle("selected", state.harmonyMode === mode);
+      if (mode) element.classList.toggle("selected", state.useTuning && state.harmonyMode === mode);
       else element.classList.toggle("hidden", !state.useTuning);
     }
   }
@@ -184,7 +185,7 @@ function setupHarmony(harmonyKeyboard, updateRootHighlight) {
     }
   );
 
-  onStateChange(["rootMidi"], updateRootHighlight);
+  onStateChange(["rootMidi", "harmonyMode", "useTuning"], updateRootHighlight);
   onStateChange(["harmonyMode", "useTuning"], updateSpecialHouses);
 
   updateRootHighlight();
