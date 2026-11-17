@@ -10,8 +10,8 @@ export class SynthController {
     this.isHeld = new Array(128).fill(false);
     this.sustainEnabled = false;
 
-    // Pedal (Prototyp W4.1, nur mit `?sustain=pedal` benutzt): Solange es getreten ist, klingen die
-    // Töne in `pedalNotes` auch ohne gedrückte Taste weiter.
+    // Pedal (W4.2, Sustain-Button gedrückt): Solange es getreten ist, klingen die Töne in
+    // `pedalNotes` auch ohne gedrückte Taste weiter. `pedalUsed`: ein Tastenzustand hat sich geändert.
     this.pedalActive = false;
     this.pedalUsed = false;
     this.pedalNotes = new Set();
@@ -47,9 +47,10 @@ export class SynthController {
   }
 
   // Pedal loslassen. Liefert, was daraus wurde:
-  // "pedal"  – währenddessen wurde eine Taste angeschlagen: alle Pedal-Töne ohne gedrückte Taste enden;
-  // "hold"   – kein Anschlag, Sustain aus, Tasten waren beim Treten gedrückt: sie werden gehalten (wie S3);
-  // "toggle" – kein Anschlag, sonst: der Aufrufer schaltet Sustain um.
+  // "pedal"  – währenddessen wurde eine Taste angeschlagen oder losgelassen: alle Pedal-Töne ohne
+  //            gedrückte Taste enden; Sustain bleibt, wie es war;
+  // "hold"   – keine Änderung, Sustain aus, Tasten waren beim Treten gedrückt: sie werden gehalten (wie S3);
+  // "toggle" – keine Änderung, sonst: der Aufrufer schaltet Sustain um.
   pedalUp() {
     const notes = Array.from(this.pedalNotes);
     const result = this.pedalUsed ? "pedal" : (!this.sustainEnabled && notes.length > 0 ? "hold" : "toggle");
@@ -100,6 +101,7 @@ export class SynthController {
       this.evaluateNoteState(midi, true);
       this.updateKeyboardVisuals(midi);
     } else if (type === "up") {
+      if (this.pedalActive) this.pedalUsed = true;
       if (this.physicalPresses[midi] > 0) {
         this.physicalPresses[midi]--;
       }

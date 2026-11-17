@@ -238,21 +238,7 @@ function setupSustain(synth) {
     btnSustain.classList.toggle("selected", state.sustain);
   }
 
-  if (options.sustain === "pedal") {
-    setupSustainPedal(synth, btnSustain, updateSustainVisual);
-  } else {
-    // Sind Tasten gedrückt, werden sie gehalten und Sustain bleibt aus (kurzes Aufleuchten);
-    // sonst schaltet der Button Sustain um.
-    btnSustain.addEventListener("pointerdown", event => {
-      event.preventDefault();
-      if (!state.sustain && synth.holdPressedKeys()) {
-        btnSustain.classList.add("selected");
-        setTimeout(() => btnSustain.classList.remove("selected"), 120);
-        return;
-      }
-      setState("sustain", !state.sustain);
-    });
-  }
+  setupSustainPedal(synth, btnSustain, updateSustainVisual);
 
   btnRelease.addEventListener("pointerdown", event => {
     event.preventDefault();
@@ -270,8 +256,9 @@ function setupSustain(synth) {
   updateSustainVisual();
 }
 
-// Prototyp W4.1 (`?sustain=pedal`): Der Sustain-Button wirkt als Pedal, solange er gedrückt ist.
-// Wird währenddessen keine Taste angeschlagen, wirkt er beim Loslassen wie bisher (siehe `pedalUp`).
+// Der Sustain-Button wirkt als Pedal, solange er gedrückt ist (W4.2). Ändert sich währenddessen kein
+// Tastenzustand, wirkt er beim Loslassen als Umschalter bzw. hält gedrückte Tasten (S3, siehe `pedalUp`).
+// Nach dem Pedal bleibt Sustain, wie es vorher war.
 function setupSustainPedal(synth, btnSustain, updateSustainVisual) {
   let pedalPointer = null;
 
@@ -291,7 +278,6 @@ function setupSustainPedal(synth, btnSustain, updateSustainVisual) {
     pedalPointer = null;
     const result = synth.pedalUp();
     if (result === "toggle") setState("sustain", !state.sustain);
-    if (result === "pedal") setState("sustain", false);
     updateSustainVisual();
   };
   btnSustain.addEventListener("pointerup", release);

@@ -140,7 +140,7 @@ test("Release beendet gehaltene Töne, aber keine noch gedrückten", () => {
   assert.deepEqual([...synth.activeNotes], []);
 });
 
-// --- Pedal (Prototyp W4.1) ---
+// --- Pedal (W4.2) ---
 
 test("Pedal: angeschlagene Töne klingen nach dem Loslassen der Taste weiter und enden mit dem Pedal", () => {
   const { synth, log, held } = createSynth();
@@ -185,19 +185,31 @@ test("Pedal ohne Anschlag, keine Taste gedrückt: Ergebnis „toggle“, nichts 
   assert.deepEqual(log, []);
 });
 
-test("Pedal ohne Anschlag bei gedrückten Tasten: sie werden gehalten wie bei S3", () => {
+test("Pedal ohne Änderung bei gedrückten Tasten: sie werden gehalten wie bei S3", () => {
+  const { synth, log, held } = createSynth();
+  synth.handlePointerEvent("down", 60);
+  synth.pedalDown();
+  assert.equal(synth.pedalUp(), "hold");
+  assert.equal(held.get(60), true);
+
+  synth.handlePointerEvent("up", 60);
+  assert.deepEqual(log, [["noteOn", 60, 600]]);
+
+  synth.releaseAllHeldKeys();
+  assert.deepEqual(log.at(-1), ["noteOff", 60]);
+});
+
+test("Pedal mit nur Loslassen (W4.2): Ton klingt weiter und endet mit dem Pedal", () => {
   const { synth, log, held } = createSynth();
   synth.handlePointerEvent("down", 60);
   synth.pedalDown();
   synth.handlePointerEvent("up", 60);
   assert.deepEqual(log, [["noteOn", 60, 600]]);
-
-  assert.equal(synth.pedalUp(), "hold");
-  assert.deepEqual(log, [["noteOn", 60, 600]]);
   assert.equal(held.get(60), true);
 
-  synth.releaseAllHeldKeys();
-  assert.deepEqual(log.at(-1), ["noteOff", 60]);
+  assert.equal(synth.pedalUp(), "pedal");
+  assert.deepEqual(log, [["noteOn", 60, 600], ["noteOff", 60]]);
+  assert.equal(held.get(60), false);
 });
 
 test("Pedal mit Anschlag: auch die beim Treten gedrückten Tasten enden, früher gehaltene Töne bleiben", () => {
