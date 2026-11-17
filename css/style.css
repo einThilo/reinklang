@@ -253,6 +253,8 @@ button {
   height: 100%;
   width: 100%;
   position: relative;
+  /* Eine schwarze Taste am Rand des Bereichs ragt zur Hälfte hinaus; abschneiden, damit die Seite nicht breiter wird. */
+  overflow: hidden;
   background: #111;
   user-select: none;
   touch-action: none;
