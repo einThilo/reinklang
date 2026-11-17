@@ -451,8 +451,10 @@ function setupFullscreen() {
   const appRoot = document.getElementById("app");
   const fullscreenButton = document.getElementById("fullscreen-toggle");
 
+  // Symbol „⛶“ in beiden Zuständen (L5); der Hinweis beim Darüberfahren sagt, was der Tipp bewirkt.
   function updateFullscreenButton() {
-    fullscreenButton.textContent = document.fullscreenElement ? "Exit fullscreen" : "Fullscreen";
+    fullscreenButton.textContent = "⛶";
+    fullscreenButton.title = document.fullscreenElement ? "Vollbild beenden" : "Vollbild";
   }
 
   fullscreenButton.addEventListener("pointerdown", event => {
