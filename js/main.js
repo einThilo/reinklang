@@ -38,7 +38,7 @@ function init() {
     fullEdgeKeys: options.rand === "ganz"
   });
 
-  const audioEngine = new AudioEngine(state.instrument, { softSwitch: options.wechsel === "weich" });
+  const audioEngine = new AudioEngine(state.instrument);
 
   const frequencyOf = midi => frequencyFromState(midi, state);
 

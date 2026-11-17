@@ -83,47 +83,6 @@ test("Instrumentwechsel (Vorgabe): neue Stimme mit neuem Lautstärkeregler und f
   assert.equal(after.envelope.sustainGain, after.envelope.startGain);
 });
 
-test("Instrumentwechsel mit softSwitch (K2.1): Regler und Verlauf bleiben, nur der Oszillator wird überblendet", () => {
-  const engine = new AudioEngine("piano", { softSwitch: true });
-  engine.noteOn(60, 261);
-  const voice = engine.voices.get(60);
-  const { gain, envelope, osc: oldOsc } = voice;
-  const gainCalls = gain.gain.calls.length;
-
-  engine.ctx.currentTime = 0.5;
-  engine.setInstrument("pad");
-
-  assert.equal(engine.voices.get(60), voice);
-  assert.equal(voice.gain, gain);
-  assert.equal(voice.envelope, envelope);
-  assert.equal(gain.gain.calls.length, gainCalls);
-
-  assert.notEqual(voice.osc, oldOsc);
-  assert.equal(voice.osc.started, 0.5);
-  assert.deepEqual(voice.osc.frequency.calls[0], ["setValueAtTime", 261, 0.5]);
-  assert.equal(oldOsc.stopped, 0.5 + 0.03 + 0.02);
-
-  // Beide Oszillatoren hängen über je einen Überblend-Regler am Lautstärkeregler der Stimme.
-  const [fadeOut] = oldOsc.connectedTo;
-  const [fadeIn] = voice.osc.connectedTo;
-  assert.deepEqual(fadeOut.connectedTo, [gain]);
-  assert.deepEqual(fadeIn.connectedTo, [gain]);
-  assert.deepEqual(fadeOut.gain.calls, [["setValueAtTime", 1, 0.5], ["linearRampToValueAtTime", 0, 0.53]]);
-  assert.deepEqual(fadeIn.gain.calls, [["setValueAtTime", 0, 0.5], ["linearRampToValueAtTime", 1, 0.53]]);
-});
-
-test("softSwitch: Loslassen nach dem Wechsel beendet den neuen Oszillator", () => {
-  const engine = new AudioEngine("piano", { softSwitch: true });
-  engine.noteOn(60, 261);
-  engine.ctx.currentTime = 0.5;
-  engine.setInstrument("pad");
-  const voice = engine.voices.get(60);
-
-  engine.ctx.currentTime = 1;
-  engine.noteOff(60);
-  assert.equal(voice.osc.stopped, 1 + INSTRUMENTS.pad.releaseTime + 0.02);
-});
-
 test("Wellenform: innerhalb eines Halbtons wiederverwendet, bei anderer Tonhöhe derselben Taste neu berechnet (K5)", () => {
   const engine = new AudioEngine("piano");
   const waveOf = frequency => {

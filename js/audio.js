@@ -2,8 +2,6 @@ import { INSTRUMENTS } from "./instruments.js";
 
 const MAX_HARMONIC = 128;
 const MIN_GAIN = 0.001;
-// Dauer der Überblendung beim Instrumentwechsel mit `softSwitch` (Prototyp K2.1), in Sekunden.
-const SWITCH_FADE_TIME = 0.03;
 
 function interpolateKeyframes(freq, keyframes) {
   const freqs = Object.keys(keyframes).map(Number).sort((a, b) => a - b);
@@ -90,9 +88,7 @@ function anchorGain(voice, current, t) {
 }
 
 export class AudioEngine {
-  // `softSwitch` (Prototyp K2.1, `?wechsel=weich`): Instrumentwechsel tauscht nur den Oszillator.
-  constructor(instrumentKey, { softSwitch = false } = {}) {
-    this.softSwitch = softSwitch;
+  constructor(instrumentKey) {
     this.ctx = null;
     this.master = null;
 
@@ -182,11 +178,6 @@ export class AudioEngine {
     const t = this.ctx.currentTime;
 
     for (const [midi, oldVoice] of Array.from(this.voices)) {
-      if (this.softSwitch) {
-        this.swapOscillator(oldVoice, t);
-        continue;
-      }
-
       const currentGain = gainAt(oldVoice, t);
       oldVoice.osc.stop(t + 0.02);
 
@@ -197,34 +188,6 @@ export class AudioEngine {
 
       this.voices.set(midi, newVoice);
     }
-  }
-
-  // Prototyp K2.1: Der Lautstärkeregler der Stimme und sein Verlauf bleiben, der Ton klingt also
-  // weiter ab. Nur der Oszillator wird getauscht: der alte wird über einen eigenen Regler aus-,
-  // der neue eingeblendet.
-  swapOscillator(voice, t) {
-    const end = t + SWITCH_FADE_TIME;
-
-    const fadeOut = this.ctx.createGain();
-    fadeOut.gain.setValueAtTime(1, t);
-    fadeOut.gain.linearRampToValueAtTime(0, end);
-    voice.osc.disconnect();
-    voice.osc.connect(fadeOut);
-    fadeOut.connect(voice.gain);
-    voice.osc.stop(end + 0.02);
-
-    const fadeIn = this.ctx.createGain();
-    fadeIn.gain.setValueAtTime(0, t);
-    fadeIn.gain.linearRampToValueAtTime(1, end);
-    fadeIn.connect(voice.gain);
-
-    const osc = this.ctx.createOscillator();
-    osc.setPeriodicWave(this.getWave(voice.baseFrequency));
-    osc.frequency.setValueAtTime(voice.baseFrequency, t);
-    osc.connect(fadeIn);
-    osc.start(t);
-
-    voice.osc = osc;
   }
 
   noteOn(midi, frequency) {

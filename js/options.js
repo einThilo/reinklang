@@ -3,7 +3,6 @@
 export const SWITCHES = {
   start: ["tippen"],
   sustain: ["pedal"],
-  wechsel: ["weich"],
   grundton: ["haeuser"],
   abweichung: ["1"],
   wach: ["1"],
