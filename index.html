@@ -12,14 +12,15 @@
 <div id="app">
   <div id="harmony-keyboard"></div>
 
+  <!-- L8: feste Beschriftung, darüber die unsichtbare Auswahlliste; ein Tipp öffnet die Auswahl des Browsers. -->
   <div id="instrument" class="sound-control-group">
-    <label for="instrument-select">Instrument:</label>
-    <select id="instrument-select">
+    <span class="picker-label">Instrument</span>
+    <select id="instrument-select" aria-label="Instrument">
     </select>
   </div>
   <div id="tuning" class="sound-control-group">
-    <label for="tuning-select">Tuning:</label>
-    <select id="tuning-select">
+    <span class="picker-label">Stimmung</span>
+    <select id="tuning-select" aria-label="Stimmung">
     </select>
   </div>
 

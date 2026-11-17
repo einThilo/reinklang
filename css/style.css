@@ -83,34 +83,39 @@ html, body {
   text-align: center;
 }
 
-/* Sound panel layout distribution */
+/* Instrument und Stimmung (L8): sieht aus wie ein Button mit fester Beschriftung. Die Auswahlliste
+   liegt unsichtbar darüber und fängt den Tipp; die Liste zeigt der Browser. */
 .sound-control-group {
-  flex-direction: column;
-  justify-content: center;
+  position: relative;
   padding: 6px;
 }
 
-.sound-control-group label {
-  flex: 0 1 auto;
-  min-height: 0;
+.picker-label {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
   overflow: hidden;
   white-space: nowrap;
-  font-size: clamp(12px, 2vmin, 20px);
+  border: 1px solid #888;
+  border-radius: 3px;
+  background: #e9e9ed;
+  font-weight: bold;
+  font-size: clamp(12px, 2.5vmin, 20px);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .sound-control-group select {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  box-sizing: border-box;
-  flex: 1 0 auto;
-  min-height: 0;
-}
-
-/* Form controls and input groups */
-#tuning-select, #instrument-select {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  font-size: clamp(16px, 2.2vmin, 20px);
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  /* ab 16px vergrößert iOS die Seite beim Antippen nicht */
+  font-size: 16px;
 }
 
 /* Horizontal collapsing for labels and values under tight space */
@@ -281,19 +286,11 @@ body[class*="layout-"] #keyboard {
   --black-key-height: 50%;
 }
 
-/* Instrument und Tuning: keine Beschriftung, die Liste füllt das Feld. */
+/* Instrument und Stimmung: der Button füllt das Feld. */
 body[class*="layout-"] .sound-control-group {
   padding: 0;
 }
 
-body[class*="layout-"] .sound-control-group label {
-  display: none;
-}
-
-body[class*="layout-"] .sound-control-group select {
-  height: 100%;
-  flex: 1 1 auto;
-}
 
 /* Stimmton: Zahl, daneben - und + in voller Höhe, ohne Rand. */
 body[class*="layout-"] .tone-input-group {
