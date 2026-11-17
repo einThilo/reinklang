@@ -31,6 +31,8 @@ export class HarmonyKeyboard {
     this.highlightedMidi = null;
     // Ton → Element, nur die 12 Tonhäuser; wird bei `setStart` neu belegt.
     this.keyElements = new Map();
+    // Name des Sonderhauses („left“, „middle“, „right“) → Element.
+    this.specialElements = new Map();
 
     this.rootElement = document.createElement("div");
     this.rootElement.className = "keyboard";
@@ -43,6 +45,7 @@ export class HarmonyKeyboard {
       if (house.special) {
         element.classList.add("special");
         element.dataset.special = house.special;
+        this.specialElements.set(house.special, element);
       }
       element.style.left = house.left + "%";
       element.style.width = house.width + "%";
@@ -77,13 +80,15 @@ export class HarmonyKeyboard {
     }
   }
 
-  // Ruft `callback(midi)` beim Antippen eines Tonhauses. Gleiten wechselt das Haus nicht.
-  onPress(callback) {
+  // Ruft beim Antippen `onKey(midi)` für ein Tonhaus und `onSpecial(name)` für ein Sonderhaus.
+  // Gleiten wechselt das Haus nicht.
+  onPress(onKey, onSpecial) {
     this.rootElement.addEventListener("pointerdown", event => {
       const element = event.target.closest(".house");
       if (!element || !this.rootElement.contains(element)) return;
       event.preventDefault();
-      if (element.dataset.midi !== undefined) callback(Number(element.dataset.midi));
+      if (element.dataset.special !== undefined) onSpecial(element.dataset.special);
+      else onKey(Number(element.dataset.midi));
     });
   }
 }

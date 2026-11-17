@@ -10,7 +10,9 @@ html, body {
 /* Raster: zwölf benannte Bereiche liegen direkt in #app.
    Die Layout-Varianten (?layout=<name>) stehen am Ende dieser Datei.
    Obere Leiste = 4/11 der Höhe, in fünf Zeilen geteilt, damit sich die mittleren
-   Spalten in Drittel (28 | 8+20 | 4+24) und die rechte in 3:2:2 (28+8 | 20+4 | 24) teilen. */
+   Spalten in Drittel (28 | 8+20 | 4+24) und die rechte in 3:2:2 (28+8 | 20+4 | 24) teilen.
+   Die Bereiche „autoroot“ und „use“ sind seit L7 leer (Bedienung in der Harmonieklaviatur), bis zur
+   Layout-Runde L1. */
 #app {
   display: grid;
   width: 100%;
@@ -35,10 +37,8 @@ html, body {
 }
 
 #harmony-keyboard  { grid-area: rootkeys; }
-#harmony-auto      { grid-area: autoroot; }
 #instrument        { grid-area: instrument; }
 #tuning            { grid-area: tuning; }
-#tuning-use-button { grid-area: use; }
 #pitch             { grid-area: pitch; }
 #btn-sustain       { grid-area: sustain; }
 #btn-release       { grid-area: release; }
@@ -50,45 +50,6 @@ html, body {
 #harmony-keyboard {
   background: #eee;
   position: relative;
-}
-
-#harmony-auto {
-  background: #222;
-  display: flex;
-  flex-direction: column;
-  border-right: 4px solid #000;
-  box-sizing: border-box;
-}
-
-.auto-btn {
-  flex: 1 1 0%;
-  min-height: 0;
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  padding-left: 10px;
-  color: #aaa;
-  font-weight: bold;
-  font-size: clamp(10px, 2vmin, 16px);
-  cursor: pointer;
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-  transition: background 0.15s, color 0.15s;
-  border-bottom: 2px solid #111;
-  box-sizing: border-box;
-}
-
-.auto-btn:last-child {
-  border-bottom: none;
-}
-
-.auto-btn.selected {
-  background: #d22;
-  color: #fff;
 }
 
 /* Base blocks */
@@ -127,10 +88,6 @@ html, body {
   flex-direction: column;
   justify-content: center;
   padding: 6px;
-}
-
-.tuning-use-button {
-  color: #000;
 }
 
 .sound-control-group label {
@@ -186,7 +143,6 @@ html, body {
 
 /* Interactive UI elements and typography */
 .sustain-release-half,
-.tuning-use-button,
 #fullscreen-toggle,
 .tone-btn,
 #keyboard-tools button,
@@ -196,8 +152,7 @@ html, body {
   font-weight: bold;
 }
 
-.sustain-release-half,
-.tuning-use-button {
+.sustain-release-half {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -210,7 +165,6 @@ html, body {
   transition: background 0.15s;
 }
 
-.tuning-use-button.selected,
 .sustain-release-half.selected {
   background: #d22;
 }
@@ -366,19 +320,13 @@ body[class*="layout-"] #keyboard-tools [data-action="incKeys"] {
   grid-column: span 2;
 }
 
-/* Release, Sustain, Use tuning: als Knöpfe mit Rand erkennbar. */
-body[class*="layout-"] .sustain-release-half,
-body[class*="layout-"] .tuning-use-button {
+/* Release, Sustain: als Knöpfe mit Rand erkennbar. */
+body[class*="layout-"] .sustain-release-half {
   border: 1px solid #888;
   border-radius: 0;
   box-sizing: border-box;
   font-size: clamp(14px, 4vmin, 24px);
   text-align: center;
-}
-
-/* Harmonie-Automatik: kein dicker Rand rechts (liegt nicht mehr neben der Grundton-Klaviatur). */
-body[class*="layout-"] #harmony-auto {
-  border-right: none;
 }
 
 /* --- Variante "band": Leiste, darunter Band Release | Sustain | Use tuning, darunter Klaviatur --- */
@@ -405,24 +353,6 @@ body.layout-band-unten #app {
 
 /* --- Varianten "ecke" und "ecken": Spielknöpfe groß in der höheren Leiste, Einstellungen in vier Zeilen --- */
 
-/* Tiefster und Erster nebeneinander. */
-body.layout-ecke #harmony-auto,
-body.layout-ecken #harmony-auto {
-  flex-direction: row;
-}
-
-body.layout-ecke .auto-btn,
-body.layout-ecken .auto-btn {
-  justify-content: center;
-  padding-left: 0;
-  border-bottom: none;
-  border-right: 2px solid #111;
-}
-
-body.layout-ecke .auto-btn:last-child,
-body.layout-ecken .auto-btn:last-child {
-  border-right: none;
-}
 
 /* "ecke": Release/Sustain und Use tuning am linken Ende der Leiste. */
 body.layout-ecke #app {
@@ -475,11 +405,6 @@ body.layout-klassisch-2 #keyboard {
   --black-key-height: 60%;
 }
 
-/* Harmonie-Automatik liegt wie in der Vorgabe neben der Grundton-Klaviatur. */
-body.layout-klassisch-2 #harmony-auto {
-  border-right: 4px solid #000;
-}
-
 /* Tastenbereich: drei Zeilen << < | > >> | - +. */
 body.layout-klassisch-2 #keyboard-tools {
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -514,10 +439,6 @@ body.layout-band-gruppe #app {
 body.layout-band-gruppe #fullscreen-toggle {
   padding: 0;
   font-size: clamp(10px, 2vmin, 16px);
-}
-
-body.layout-band-gruppe .auto-btn {
-  padding-left: 4px;
 }
 
 /* ============================================================
@@ -573,6 +494,37 @@ body.layout-band-gruppe .auto-btn {
   /* Dachansatz: 37 / 61 der Haushöhe */
   clip-path: polygon(1px 0, calc(100% - 1px) 0, calc(100% - 1px) 60.66%, 50% 100%, 1px 60.66%);
 }
+
+/* Sonderhäuser (L7): links „⇤“, rechts „1.“ (je zur Hälfte sichtbar), in der Lücke e–f „tuning off“.
+   Die Beschriftung steht mittig im sichtbaren Rechteck über der Spitze. */
+#harmony-keyboard .special {
+  background: #5d6b76;
+}
+
+#harmony-keyboard .special-label {
+  position: absolute;
+  top: 0;
+  height: 60.66%;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: bold;
+  font-size: clamp(10px, 2.2vmin, 16px);
+  line-height: 1.1;
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#harmony-keyboard .special[data-special="left"] .special-label { left: 50%; }
+#harmony-keyboard .special[data-special="right"] .special-label { right: 50%; }
+#harmony-keyboard .special.selected { background: #1fb5b5; }
+#harmony-keyboard .special[data-special="middle"] { background: #d22; }
+#harmony-keyboard .special.hidden { visibility: hidden; }
 
 /* Abweichung (Z1.1): Abweichung von der gleichstufigen Stimmung auf den Grundton-Tasten.
    Rote Linie = aktuelle Stimmung, Tastenmitte = gleichstufig, Ränder = ±50 Cent. Die Zahl steht am

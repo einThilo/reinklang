@@ -150,31 +150,45 @@ function setupKeyboardRange(mainKeyboard) {
   });
 }
 
-// Grundton-Klaviatur und Harmonie-Automatik („Tiefster“, „Erster“).
-function setupHarmony(harmonyKeyboard, updateRootHighlight) {
-  const autoBtns = document.querySelectorAll(".auto-btn");
+// Grundton-Klaviatur (L7). Die Sonderhäuser: links „⇤“ (Automatik „Tiefster“), rechts „1.“
+// (Automatik „Erster“), in der Lücke e–f „tuning off“. Ein Ton- oder Automatikhaus schaltet das
+// Tuning ein, „tuning off“ schaltet es aus und ist nur bei eingeschaltetem Tuning sichtbar.
+const SPECIAL_HOUSES = {
+  left: { label: "⇤", mode: "lowest" },
+  right: { label: "1.", mode: "first" },
+  middle: { label: "tuning off", mode: null }
+};
 
-  function updateHarmonyModeButtons() {
-    autoBtns.forEach(btn => btn.classList.toggle("selected", btn.dataset.mode === state.harmonyMode));
+function setupHarmony(harmonyKeyboard, updateRootHighlight) {
+  for (const [name, { label }] of Object.entries(SPECIAL_HOUSES)) {
+    const labelElement = document.createElement("span");
+    labelElement.className = "special-label";
+    labelElement.textContent = label;
+    harmonyKeyboard.specialElements.get(name).appendChild(labelElement);
   }
 
-  autoBtns.forEach(btn => {
-    btn.addEventListener("pointerdown", event => {
-      event.preventDefault();
-      setState("harmonyMode", btn.dataset.mode);
-    });
-  });
+  function updateSpecialHouses() {
+    for (const [name, { mode }] of Object.entries(SPECIAL_HOUSES)) {
+      const element = harmonyKeyboard.specialElements.get(name);
+      if (mode) element.classList.toggle("selected", state.harmonyMode === mode);
+      else element.classList.toggle("hidden", !state.useTuning);
+    }
+  }
 
-  harmonyKeyboard.onPress(midi => {
-    setState("harmonyMode", "manual");
-    setState("rootMidi", midi);
-  });
+  harmonyKeyboard.onPress(
+    midi => setStates({ harmonyMode: "manual", rootMidi: midi, useTuning: true }),
+    name => {
+      const { mode } = SPECIAL_HOUSES[name];
+      if (mode) setStates({ harmonyMode: mode, useTuning: true });
+      else setState("useTuning", false);
+    }
+  );
 
   onStateChange(["rootMidi"], updateRootHighlight);
-  onStateChange(["harmonyMode"], updateHarmonyModeButtons);
+  onStateChange(["harmonyMode", "useTuning"], updateSpecialHouses);
 
   updateRootHighlight();
-  updateHarmonyModeButtons();
+  updateSpecialHouses();
 }
 
 // Auswahlliste für das Instrument.
@@ -199,10 +213,9 @@ function setupInstrument(audioEngine) {
   });
 }
 
-// Auswahlliste für die Stimmung und Button „Use tuning“.
+// Auswahlliste für die Stimmung.
 function setupTuning() {
   const tuningSelect = document.getElementById("tuning-select");
-  const tuningButton = document.getElementById("tuning-use-button");
 
   Object.entries(TUNINGS).forEach(([key, tuning]) => {
     const option = document.createElement("option");
@@ -213,18 +226,13 @@ function setupTuning() {
 
   function updateTuningControls() {
     tuningSelect.value = state.tuningMode;
-    tuningButton.classList.toggle("selected", state.useTuning);
   }
 
   tuningSelect.addEventListener("change", () => {
     setState("tuningMode", tuningSelect.value);
   });
-  tuningButton.addEventListener("pointerdown", event => {
-    event.preventDefault();
-    setState("useTuning", !state.useTuning);
-  });
 
-  onStateChange(["tuningMode", "useTuning"], updateTuningControls);
+  onStateChange(["tuningMode"], updateTuningControls);
   updateTuningControls();
 }
 

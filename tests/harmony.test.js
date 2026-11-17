@@ -60,6 +60,7 @@ test("Sonderhäuser haben keinen Ton", () => {
   const specials = keyboard.elements.filter(element => element.classList.contains("special"));
   assert.deepEqual(specials.map(element => element.dataset.special), ["left", "middle", "right"]);
   specials.forEach(element => assert.equal(element.dataset.midi, undefined));
+  assert.equal(keyboard.specialElements.get("middle"), specials[1]);
 });
 
 test("Grundton-Markierung wechselt und bleibt nach setStart am selben Ton", () => {
