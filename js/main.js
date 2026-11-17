@@ -397,9 +397,9 @@ function setupStartOverlay(audioEngine) {
   document.body.appendChild(overlay);
 }
 
-// Abweichungsanzeige (Z1.1): zeigt bei „Use tuning“ auf jeder Grundton-Taste eine graue Linie
-// in der Mitte (gleichstufig), eine rote Linie für die aktuelle Stimmung und die Abweichung in Cent.
-// Muss nach `setupTranspose` angemeldet werden: Die Transposition baut die Tasten neu auf.
+// Abweichungsanzeige (Z1.1): zeigt bei „Use tuning“ auf jeder Grundton-Taste eine rote Linie für die
+// aktuelle Stimmung (Tastenmitte = gleichstufig) und die Abweichung in Cent.
+// Muss nach `setupTranspose` angemeldet werden: Die Transposition belegt die Tasten mit neuen Tönen.
 function setupDeviation(harmonyKeyboard) {
   function renderDeviations() {
     for (const [midi, keyElement] of harmonyKeyboard.keyElements) {

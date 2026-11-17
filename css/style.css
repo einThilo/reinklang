@@ -566,21 +566,12 @@ body.layout-band-gruppe .auto-btn {
 }
 
 /* Abweichung (Z1.1): Abweichung von der gleichstufigen Stimmung auf den Grundton-Tasten.
-   Graue Linie in der Tastenmitte = gleichstufig, rote Linie = aktuelle Stimmung (Ränder = ±50 Cent). */
+   Rote Linie = aktuelle Stimmung, Tastenmitte = gleichstufig, Ränder = ±50 Cent. Die Zahl steht am
+   Fundament des Hauses: bei weißen unten, bei schwarzen oben (Z1.2). */
 .deviation {
   position: absolute;
   inset: 0;
   pointer-events: none;
-}
-
-.deviation::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: #999;
 }
 
 .deviation-marker {
@@ -594,7 +585,7 @@ body.layout-band-gruppe .auto-btn {
 
 .deviation-value {
   position: absolute;
-  top: 62%;
+  bottom: 4px;
   left: 50%;
   transform: translateX(-50%);
   padding: 0 1px;
@@ -606,7 +597,8 @@ body.layout-band-gruppe .auto-btn {
 }
 
 .key.black .deviation-value {
-  top: 38%;
+  top: 4px;
+  bottom: auto;
   color: #faa;
   background: rgba(0, 0, 0, 0.7);
 }
