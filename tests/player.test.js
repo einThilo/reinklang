@@ -140,6 +140,107 @@ test("Release beendet gehaltene Töne, aber keine noch gedrückten", () => {
   assert.deepEqual([...synth.activeNotes], []);
 });
 
+// --- Pedal (Prototyp W4.1) ---
+
+test("Pedal: angeschlagene Töne klingen nach dem Loslassen der Taste weiter und enden mit dem Pedal", () => {
+  const { synth, log, held } = createSynth();
+  synth.pedalDown();
+  synth.handlePointerEvent("down", 60);
+  synth.handlePointerEvent("up", 60);
+  assert.deepEqual(log, [["noteOn", 60, 600]]);
+  assert.equal(held.get(60), true);
+
+  assert.equal(synth.pedalUp(), "pedal");
+  assert.deepEqual(log, [["noteOn", 60, 600], ["noteOff", 60]]);
+  assert.equal(held.get(60), false);
+});
+
+test("Pedal: eine noch gedrückte Taste klingt nach dem Loslassen des Pedals weiter", () => {
+  const { synth, log } = createSynth();
+  synth.pedalDown();
+  synth.handlePointerEvent("down", 60);
+  synth.handlePointerEvent("down", 64);
+  synth.handlePointerEvent("up", 60);
+  assert.equal(synth.pedalUp(), "pedal");
+  assert.deepEqual(log, [["noteOn", 60, 600], ["noteOn", 64, 640], ["noteOff", 60]]);
+
+  synth.handlePointerEvent("up", 64);
+  assert.deepEqual(log.at(-1), ["noteOff", 64]);
+});
+
+test("Pedal: erneuter Anschlag eines Pedal-Tons schlägt neu an, statt ihn zu beenden", () => {
+  const { synth, log } = createSynth();
+  synth.pedalDown();
+  synth.handlePointerEvent("down", 60);
+  synth.handlePointerEvent("up", 60);
+  synth.handlePointerEvent("down", 60);
+  synth.handlePointerEvent("up", 60);
+  assert.deepEqual(log, [["noteOn", 60, 600], ["noteOn", 60, 600]]);
+});
+
+test("Pedal ohne Anschlag, keine Taste gedrückt: Ergebnis „toggle“, nichts klingt", () => {
+  const { synth, log } = createSynth();
+  synth.pedalDown();
+  assert.equal(synth.pedalUp(), "toggle");
+  assert.deepEqual(log, []);
+});
+
+test("Pedal ohne Anschlag bei gedrückten Tasten: sie werden gehalten wie bei S3", () => {
+  const { synth, log, held } = createSynth();
+  synth.handlePointerEvent("down", 60);
+  synth.pedalDown();
+  synth.handlePointerEvent("up", 60);
+  assert.deepEqual(log, [["noteOn", 60, 600]]);
+
+  assert.equal(synth.pedalUp(), "hold");
+  assert.deepEqual(log, [["noteOn", 60, 600]]);
+  assert.equal(held.get(60), true);
+
+  synth.releaseAllHeldKeys();
+  assert.deepEqual(log.at(-1), ["noteOff", 60]);
+});
+
+test("Pedal mit Anschlag: auch die beim Treten gedrückten Tasten enden, früher gehaltene Töne bleiben", () => {
+  const { synth, log } = createSynth();
+  synth.setSustainEnabled(true);
+  synth.handlePointerEvent("down", 48);
+  synth.handlePointerEvent("up", 48);
+  synth.setSustainEnabled(false);
+  synth.handlePointerEvent("down", 60);
+
+  synth.pedalDown();
+  synth.handlePointerEvent("up", 60);
+  synth.handlePointerEvent("down", 64);
+  synth.handlePointerEvent("up", 64);
+  assert.equal(synth.pedalUp(), "pedal");
+
+  assert.deepEqual([...synth.activeNotes], [48]);
+});
+
+test("Pedal bei eingeschaltetem Sustain: Anschläge zählen als gedrückte Tasten, nicht als Umschalten", () => {
+  const { synth } = createSynth();
+  synth.setSustainEnabled(true);
+  synth.pedalDown();
+  synth.handlePointerEvent("down", 60);
+  synth.handlePointerEvent("up", 60);
+  assert.equal(synth.isHeld[60], false);
+  assert.equal(synth.pedalUp(), "pedal");
+  assert.deepEqual([...synth.activeNotes], []);
+});
+
+test("Pedal meldet Tonänderungen beim Loslassen genau einmal", () => {
+  const { synth } = createSynth();
+  synth.pedalDown();
+  synth.handlePointerEvent("down", 60);
+  synth.handlePointerEvent("down", 64);
+  synth.handlePointerEvent("up", 60);
+  synth.handlePointerEvent("up", 64);
+  let notifications = 0;
+  synth.onNotesChanged = () => notifications++;
+  synth.pedalUp();
+  assert.equal(notifications, 1);
+});
+
 // --- connectAutoRoot ---
 // Diese Tests teilen sich das eine `state`-Objekt und laufen der Reihe nach.
 

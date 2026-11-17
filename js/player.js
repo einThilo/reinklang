@@ -9,7 +9,13 @@ export class SynthController {
     this.physicalPresses = new Array(128).fill(0);
     this.isHeld = new Array(128).fill(false);
     this.sustainEnabled = false;
-    
+
+    // Pedal (Prototyp W4.1, nur mit `?sustain=pedal` benutzt): Solange es getreten ist, klingen die
+    // Töne in `pedalNotes` auch ohne gedrückte Taste weiter.
+    this.pedalActive = false;
+    this.pedalUsed = false;
+    this.pedalNotes = new Set();
+
     this.activeNotes = new Set();
     this.onNotesChanged = () => {};
   }
@@ -31,6 +37,42 @@ export class SynthController {
     return found;
   }
 
+  // Pedal treten: Die gerade gedrückten Tasten gehören von Anfang an dazu.
+  pedalDown() {
+    this.pedalActive = true;
+    this.pedalUsed = false;
+    for (let midi = 0; midi < 128; midi++) {
+      if (this.physicalPresses[midi] > 0) this.addPedalNote(midi);
+    }
+  }
+
+  // Pedal loslassen. Liefert, was daraus wurde:
+  // "pedal"  – währenddessen wurde eine Taste angeschlagen: alle Pedal-Töne ohne gedrückte Taste enden;
+  // "hold"   – kein Anschlag, Sustain aus, Tasten waren beim Treten gedrückt: sie werden gehalten (wie S3);
+  // "toggle" – kein Anschlag, sonst: der Aufrufer schaltet Sustain um.
+  pedalUp() {
+    const notes = Array.from(this.pedalNotes);
+    const result = this.pedalUsed ? "pedal" : (!this.sustainEnabled && notes.length > 0 ? "hold" : "toggle");
+
+    this.pedalActive = false;
+    this.pedalUsed = false;
+    this.pedalNotes.clear();
+
+    let changed = false;
+    for (const midi of notes) {
+      if (result === "hold") this.isHeld[midi] = true;
+      if (this.evaluateNoteStateInternal(midi)) changed = true;
+      this.updateKeyboardVisuals(midi);
+    }
+    if (changed) this.onNotesChanged();
+    return result;
+  }
+
+  addPedalNote(midi) {
+    this.pedalNotes.add(midi);
+    this.updateKeyboardVisuals(midi);
+  }
+
   releaseAllHeldKeys() {
     let changed = false;
     for (let midi = 0; midi < 128; midi++) {
@@ -45,7 +87,12 @@ export class SynthController {
 
   handlePointerEvent(type, midi) {
     if (type === "down") {
-      if (this.sustainEnabled) {
+      if (this.pedalActive) {
+        // Bei getretenem Pedal zählt jeder Anschlag als gedrückte Taste, auch wenn Sustain an ist.
+        this.physicalPresses[midi]++;
+        this.pedalNotes.add(midi);
+        this.pedalUsed = true;
+      } else if (this.sustainEnabled) {
         this.isHeld[midi] = !this.isHeld[midi];
       } else {
         this.physicalPresses[midi]++;
@@ -69,8 +116,9 @@ export class SynthController {
 
   evaluateNoteStateInternal(midi, forceTrigger = false) {
     let changed = false;
-    const shouldSound = this.physicalPresses[midi] > 0 || this.isHeld[midi];
-    
+    const shouldSound = this.physicalPresses[midi] > 0 || this.isHeld[midi] || this.pedalNotes.has(midi);
+
+
     if (shouldSound) {
       if (!this.activeNotes.has(midi) || forceTrigger) {
         this.activeNotes.add(midi);
@@ -90,7 +138,7 @@ export class SynthController {
   }
 
   updateKeyboardVisuals(midi) {
-    this.keyboard.setHeldState(midi, this.isHeld[midi]);
+    this.keyboard.setHeldState(midi, this.isHeld[midi] || this.pedalNotes.has(midi));
     this.keyboard.setActiveState(midi, this.physicalPresses[midi] > 0);
   }
 }
