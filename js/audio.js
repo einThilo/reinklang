@@ -133,9 +133,11 @@ export class AudioEngine {
     this.rebuildAllVoices();
   }
 
-  // Wellenform für Instrument und Taste; einmal berechnet und dann wiederverwendet.
-  getWave(midi, baseFreq) {
-    const key = `${this.currentInstrument}:${midi}`;
+  // Wellenform für Instrument und Tonhöhe; einmal berechnet und dann wiederverwendet.
+  // Gemerkt wird auf den Halbton genau (bezogen auf 440 Hz): Die Teilton-Stärken hängen von der
+  // Frequenz ab, und die Frequenz einer Taste ändert sich mit Stimmton und Grundton.
+  getWave(baseFreq) {
+    const key = `${this.currentInstrument}:${Math.round(12 * Math.log2(baseFreq / 440))}`;
     let wave = this.waves.get(key);
     if (!wave) {
       const instrument = this.instruments[this.currentInstrument];
@@ -154,7 +156,7 @@ export class AudioEngine {
     gain.connect(this.master);
 
     const osc = this.ctx.createOscillator();
-    osc.setPeriodicWave(this.getWave(midi, baseFreq));
+    osc.setPeriodicWave(this.getWave(baseFreq));
     osc.frequency.setValueAtTime(baseFreq, t);
     osc.connect(gain);
     osc.start(t);
@@ -217,7 +219,7 @@ export class AudioEngine {
     fadeIn.connect(voice.gain);
 
     const osc = this.ctx.createOscillator();
-    osc.setPeriodicWave(this.getWave(voice.midi, voice.baseFrequency));
+    osc.setPeriodicWave(this.getWave(voice.baseFrequency));
     osc.frequency.setValueAtTime(voice.baseFrequency, t);
     osc.connect(fadeIn);
     osc.start(t);

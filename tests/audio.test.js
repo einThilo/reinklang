@@ -123,3 +123,18 @@ test("softSwitch: Loslassen nach dem Wechsel beendet den neuen Oszillator", () =
   engine.noteOff(60);
   assert.equal(voice.osc.stopped, 1 + INSTRUMENTS.pad.releaseTime + 0.02);
 });
+
+test("Wellenform: innerhalb eines Halbtons wiederverwendet, bei anderer Tonhöhe derselben Taste neu berechnet (K5)", () => {
+  const engine = new AudioEngine("piano");
+  const waveOf = frequency => {
+    engine.noteOn(60, frequency);
+    const wave = engine.voices.get(60).osc.wave;
+    engine.noteOff(60);
+    return wave;
+  };
+
+  const at261 = waveOf(261.63);
+  assert.equal(waveOf(261.63), at261);
+  assert.equal(waveOf(264), at261);          // rein gestimmt, wenige Cent daneben
+  assert.notEqual(waveOf(130.81), at261);    // Stimmton 220 statt 440: eine Oktave tiefer
+});
