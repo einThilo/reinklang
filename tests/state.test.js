@@ -155,3 +155,16 @@ test("Werte mit Grenzen nehmen nur Zahlen an; sonst bleibt der bisherige Wert (S
   assert.equal(state.transpose, transposeBefore);
   assert.deepEqual(seen, []);
 });
+
+test("state.js läuft auch ohne Object.hasOwn (ältere iOS-Versionen, S14.1)", async () => {
+  const original = Object.hasOwn;
+  delete Object.hasOwn;
+  try {
+    const old = await import("../js/state.js?ohne-hasOwn");
+    old.setState("transpose", 3);
+    assert.equal(old.state.transpose, 3);
+    assert.throws(() => old.setState("gibtEsNicht", 1), /Unbekannter Wert/);
+  } finally {
+    Object.hasOwn = original;
+  }
+});

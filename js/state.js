@@ -16,7 +16,7 @@ const listeners = [];
 
 // Wirft einen Fehler bei einem Namen, den `state` nicht kennt (z. B. Tippfehler im Code).
 function checkKey(key) {
-  if (!Object.hasOwn(state, key)) throw new Error(`Unbekannter Wert in state: ${key}`);
+  if (!Object.prototype.hasOwnProperty.call(state, key)) throw new Error(`Unbekannter Wert in state: ${key}`);
 }
 
 // Grenzen der Werte. `max` darf von den übrigen Werten abhängen; `integer` rundet auf ganze Zahlen.
