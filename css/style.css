@@ -543,8 +543,8 @@ body.layout-band-gruppe .auto-btn {
 
 /* Grundton-Tasten als „Häuser“ (L6.1). Weiße Tasten: flache Unterkante, senkrechte
    Seiten, Dachspitze in der Mitte (Dachansatz bei 60 %, Spitze bei 36 % der Höhe). Schwarze Tasten:
-   umgedreht, so breit wie die weißen, Spitze knapp über dem Tal zwischen zwei Dächern.
-   Die Form begrenzt auch die Fläche, die auf Berührung reagiert. */
+   umgedreht, so breit wie die weißen, Spitze knapp über dem Tal zwischen zwei Dächern. Lage und Breite
+   setzt harmony.js. Die Form begrenzt auch die Fläche, die auf Berührung reagiert. */
 #harmony-keyboard .keyboard {
   background: #666;
 }
@@ -556,19 +556,13 @@ body.layout-band-gruppe .auto-btn {
 }
 
 #harmony-keyboard .key.white {
+  height: 100%;
   clip-path: polygon(1px 100%, 1px 60%, 50% 36%, calc(100% - 1px) 60%, calc(100% - 1px) 100%);
 }
 
 #harmony-keyboard .key.black {
   height: 58%;
-  /* keyboard.js gibt schwarzen Tasten 90 % der Breite einer weißen; hier volle Breite. */
-  transform: scaleX(1.1111);
   clip-path: polygon(1px 0, calc(100% - 1px) 0, calc(100% - 1px) 58.6%, 50% 100%, 1px 58.6%);
-}
-
-#harmony-keyboard .key.black .key-label {
-  top: 4px;
-  bottom: auto;
 }
 
 /* Abweichung (Z1.1): Abweichung von der gleichstufigen Stimmung auf den Grundton-Tasten.

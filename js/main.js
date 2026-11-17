@@ -1,4 +1,5 @@
 import { Keyboard, clamp } from "./keyboard.js";
+import { HarmonyKeyboard } from "./harmony.js";
 import { INSTRUMENTS } from "./instruments.js";
 import { TUNINGS, frequencyFromState, centsFromEqual, deviationPosition, formatCents } from "./tuning.js";
 import { AudioEngine } from "./audio.js";
@@ -31,10 +32,9 @@ function init() {
     cutEdgeKeys: true
   });
 
-  const harmonyKeyboard = new Keyboard({
+  const harmonyKeyboard = new HarmonyKeyboard({
     container: document.getElementById("harmony-keyboard"),
-    ...harmonyRange(),
-    transposeOffset: state.transpose
+    startMidi: harmonyStart()
   });
 
   const audioEngine = new AudioEngine(state.instrument);
@@ -59,7 +59,7 @@ function init() {
     const start = harmonyKeyboard.startMidi;
     const displayMidi = start + (((state.rootMidi - start) % 12) + 12) % 12;
 
-    harmonyKeyboard.highlightHarmonyKey(displayMidi);
+    harmonyKeyboard.highlight(displayMidi);
   }
 
   setupKeyboardRange(mainKeyboard);
@@ -98,9 +98,9 @@ function init() {
   }
 }
 
-// Bereich der Grundton-Klaviatur: eine Oktave ab dem (transponierten) C4.
-function harmonyRange() {
-  return { startMidi: 60 + state.transpose, keyCount: 12 };
+// Unterster Ton der Grundton-Klaviatur: das (transponierte) C4; sie umfasst eine Oktave.
+function harmonyStart() {
+  return 60 + state.transpose;
 }
 
 /* ============================================================
@@ -165,11 +165,9 @@ function setupHarmony(harmonyKeyboard, updateRootHighlight) {
     });
   });
 
-  harmonyKeyboard.onPointerNote(event => {
-    if (event.type === "down") {
-      setState("harmonyMode", "manual");
-      setState("rootMidi", event.midi);
-    }
+  harmonyKeyboard.onPress(midi => {
+    setState("harmonyMode", "manual");
+    setState("rootMidi", midi);
   });
 
   onStateChange(["rootMidi"], updateRootHighlight);
@@ -366,7 +364,7 @@ function setupTranspose(mainKeyboard, harmonyKeyboard, updateRootHighlight) {
     updateTransposeDisplay();
 
     mainKeyboard.setRange({ transposeOffset: state.transpose });
-    harmonyKeyboard.setRange({ ...harmonyRange(), transposeOffset: state.transpose });
+    harmonyKeyboard.setStart(harmonyStart());
 
     updateRootHighlight();
   }
