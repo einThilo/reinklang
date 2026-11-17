@@ -521,7 +521,7 @@ body.layout-band-gruppe .auto-btn {
 }
 
 /* ============================================================
-   Prototypen, gewählt mit ?name=wert (siehe js/options.js).
+   Startfläche, Häuser-Form und Abweichungsanzeige (früher Prototypen).
    ============================================================ */
 
 /* Startfläche „Tippen zum Starten“ über der ganzen Seite (S2.2). */
@@ -571,7 +571,7 @@ body.layout-band-gruppe .auto-btn {
   bottom: auto;
 }
 
-/* Z1.1 (?abweichung=1): Abweichung von der gleichstufigen Stimmung auf den Grundton-Tasten.
+/* Abweichung (Z1.1): Abweichung von der gleichstufigen Stimmung auf den Grundton-Tasten.
    Graue Linie in der Tastenmitte = gleichstufig, rote Linie = aktuelle Stimmung (Ränder = ±50 Cent). */
 .deviation {
   position: absolute;

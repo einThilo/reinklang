@@ -69,7 +69,7 @@ function init() {
   setupPitch();
   setupTranspose(mainKeyboard, harmonyKeyboard, updateRootHighlight);
   setupFullscreen();
-  if (options.abweichung) setupDeviation(harmonyKeyboard);
+  setupDeviation(harmonyKeyboard);
 
   setupStartOverlay(audioEngine);
 
@@ -412,7 +412,7 @@ function setupStartOverlay(audioEngine) {
   document.body.appendChild(overlay);
 }
 
-// Prototyp Z1.1 (`?abweichung=1`): zeigt bei „Use tuning“ auf jeder Grundton-Taste eine graue Linie
+// Abweichungsanzeige (Z1.1): zeigt bei „Use tuning“ auf jeder Grundton-Taste eine graue Linie
 // in der Mitte (gleichstufig), eine rote Linie für die aktuelle Stimmung und die Abweichung in Cent.
 // Muss nach `setupTranspose` angemeldet werden: Die Transposition baut die Tasten neu auf.
 function setupDeviation(harmonyKeyboard) {
