@@ -4,7 +4,8 @@ export const SWITCHES = {
   sperren: ["aus"],
   start: ["tippen"],
   sustain: ["pedal"],
-  wechsel: ["weich"]
+  wechsel: ["weich"],
+  grundton: ["haeuser"]
 };
 
 export function readOptions(search) {
