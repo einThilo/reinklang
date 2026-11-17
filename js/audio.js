@@ -53,11 +53,19 @@ export function harmonicAmplitudes(instrument, baseFreq, nyquist) {
 }
 
 // Lautstärke einer Stimme zum Zeitpunkt t, berechnet aus dem geplanten Verlauf:
-// linearer Anschlag auf 1, dann exponentielles Abklingen auf die Haltelautstärke.
+// linearer Anschlag auf 1, dann exponentielles Abklingen auf die Haltelautstärke;
+// nach dem Loslassen exponentieller Ausklang auf MIN_GAIN.
 // Der Wert wird nicht aus dem Browser gelesen, weil der gelesene Wert der Klangberechnung nachläuft.
 function gainAt(voice, t) {
   const env = voice.envelope;
   if (!env) return MIN_GAIN;
+
+  if (env.release) {
+    const r = env.release;
+    if (t <= r.startTime) return r.startGain;
+    if (t >= r.endTime) return MIN_GAIN;
+    return r.startGain * Math.pow(MIN_GAIN / r.startGain, (t - r.startTime) / (r.endTime - r.startTime));
+  }
 
   const sinceStart = t - env.startTime;
   if (sinceStart <= 0) return env.startGain;
@@ -80,12 +88,15 @@ function anchorGain(voice, current, t) {
   g.cancelScheduledValues(t);
   if (!env) {
     g.setValueAtTime(current, t);
-  } else if (t - env.startTime < env.attackTime) {
+  } else if (!env.release && t - env.startTime < env.attackTime) {
     g.linearRampToValueAtTime(current, t);
   } else {
     g.exponentialRampToValueAtTime(current, t);
   }
 }
+
+// Plätze je Taste (K6): die Haltestimme und eine zusätzliche Spielstimme.
+export const PLAETZE = ["halte", "spiel"];
 
 export class AudioEngine {
   constructor(instrumentKey) {
@@ -95,8 +106,13 @@ export class AudioEngine {
     this.instruments = INSTRUMENTS;
     this.currentInstrument = instrumentKey;
 
+    // Taste → { halte, spiel }. Eine Stimme bleibt auch während ihres Ausklangs auf ihrem Platz,
+    // damit erneutes Drücken sie neu anschlagen kann.
     this.voices = new Map();
     this.waves = new Map();
+
+    // Zeitgeber zum Beenden ausgeklungener Stimmen; in Tests ersetzbar.
+    this.schedule = (fn, ms) => setTimeout(fn, ms);
   }
 
   ensureStarted() {
@@ -123,20 +139,25 @@ export class AudioEngine {
     }
   }
 
+  // Wirkt nur auf neue Stimmen; klingende behalten ihr Instrument (K6).
   setInstrument(instrumentKey) {
     if (!this.instruments[instrumentKey]) return;
     this.currentInstrument = instrumentKey;
-    this.rebuildAllVoices();
+  }
+
+  // Die Stimme auf einem Platz einer Taste, auch während ihres Ausklangs; sonst undefined.
+  voiceAt(midi, platz = "halte") {
+    return this.voices.get(midi)?.[platz];
   }
 
   // Wellenform für Instrument und Tonhöhe; einmal berechnet und dann wiederverwendet.
   // Gemerkt wird auf den Halbton genau (bezogen auf 440 Hz): Die Teilton-Stärken hängen von der
   // Frequenz ab, und die Frequenz einer Taste ändert sich mit Stimmton und Grundton.
-  getWave(baseFreq) {
-    const key = `${this.currentInstrument}:${Math.round(12 * Math.log2(baseFreq / 440))}`;
+  getWave(instrumentKey, baseFreq) {
+    const key = `${instrumentKey}:${Math.round(12 * Math.log2(baseFreq / 440))}`;
     let wave = this.waves.get(key);
     if (!wave) {
-      const instrument = this.instruments[this.currentInstrument];
+      const instrument = this.instruments[instrumentKey];
       const sines = harmonicAmplitudes(instrument, baseFreq, this.ctx.sampleRate / 2);
       const cosines = new Float32Array(sines.length);
       wave = this.ctx.createPeriodicWave(cosines, sines, { disableNormalization: true });
@@ -145,19 +166,21 @@ export class AudioEngine {
     return wave;
   }
 
-  // Eine Stimme ist ein Oszillator mit der Wellenform des Instruments und ein Lautstärkeregler.
+  // Eine Stimme ist ein Oszillator mit der Wellenform ihres Instruments und ein Lautstärkeregler.
+  // `releaseEnd`: Ende des laufenden Ausklangs, null solange die Stimme nicht ausklingt.
   createVoice(midi, baseFreq, t) {
+    const instrumentKey = this.currentInstrument;
     const gain = this.ctx.createGain();
     gain.gain.value = 0;
     gain.connect(this.master);
 
     const osc = this.ctx.createOscillator();
-    osc.setPeriodicWave(this.getWave(baseFreq));
+    osc.setPeriodicWave(this.getWave(instrumentKey, baseFreq));
     osc.frequency.setValueAtTime(baseFreq, t);
     osc.connect(gain);
     osc.start(t);
 
-    return { midi, baseFrequency: baseFreq, osc, gain, envelope: null };
+    return { midi, instrumentKey, baseFrequency: baseFreq, osc, gain, envelope: null, releaseEnd: null };
   }
 
   retuneVoice(voice, baseFreq, t) {
@@ -165,45 +188,44 @@ export class AudioEngine {
     voice.osc.frequency.setTargetAtTime(baseFreq, t, 0.01);
   }
 
+  // Stimmt die klingenden Stimmen um; ausklingende behalten ihre Tonhöhe.
   retuneAllVoices(frequencyOf) {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
-    for (const [midi, voice] of this.voices) {
-      this.retuneVoice(voice, frequencyOf(midi), t);
+    for (const [midi, slots] of this.voices) {
+      for (const platz of PLAETZE) {
+        const voice = slots[platz];
+        if (voice && voice.releaseEnd === null) this.retuneVoice(voice, frequencyOf(midi), t);
+      }
     }
   }
 
-  rebuildAllVoices() {
-    if (!this.ctx) return;
-    const t = this.ctx.currentTime;
-
-    for (const [midi, oldVoice] of Array.from(this.voices)) {
-      const currentGain = gainAt(oldVoice, t);
-      oldVoice.osc.stop(t + 0.02);
-
-      const newVoice = this.createVoice(midi, oldVoice.baseFrequency, t);
-      newVoice.gain.gain.setValueAtTime(currentGain, t);
-      // Die übernommene Lautstärke gilt als fester Wert.
-      newVoice.envelope = { startTime: t, startGain: currentGain, attackTime: 0, decayTime: 0, sustainGain: currentGain };
-
-      this.voices.set(midi, newVoice);
-    }
-  }
-
-  noteOn(midi, frequency) {
+  // Schlägt die Stimme auf dem Platz an. Eine klingende Stimme wird neu angeschlagen (behält ihr
+  // Instrument), eine ausklingende ebenso, falls ihr Instrument noch das aktuelle ist. Sonst beginnt
+  // eine neue Stimme; ein alter Ausklang läuft darunter zu Ende.
+  noteOn(midi, frequency, platz = "halte") {
     this.ensureStarted();
 
     const t = this.ctx.currentTime;
-    let voice = this.voices.get(midi);
-
-    if (!voice) {
-      voice = this.createVoice(midi, frequency, t);
-      this.voices.set(midi, voice);
-    } else {
-      this.retuneVoice(voice, frequency, t);
+    let slots = this.voices.get(midi);
+    if (!slots) {
+      slots = { halte: undefined, spiel: undefined };
+      this.voices.set(midi, slots);
     }
 
-    const instrument = this.instruments[this.currentInstrument];
+    let voice = slots[platz];
+    const reusable = voice && (voice.releaseEnd === null ||
+      (t < voice.releaseEnd && voice.instrumentKey === this.currentInstrument));
+
+    if (reusable) {
+      voice.releaseEnd = null;
+      this.retuneVoice(voice, frequency, t);
+    } else {
+      voice = this.createVoice(midi, frequency, t);
+      slots[platz] = voice;
+    }
+
+    const instrument = this.instruments[voice.instrumentKey];
     const g = voice.gain.gain;
     const current = gainAt(voice, t);
     const sustainGain = Math.max(instrument.sustainGain, MIN_GAIN);
@@ -221,17 +243,47 @@ export class AudioEngine {
     };
   }
 
-  noteOff(midi) {
-    const voice = this.voices.get(midi);
-    if (!voice) return;
+  // Lässt die Stimme auf dem Platz mit dem Ausklang ihres Instruments ausklingen. Sie bleibt bis zum
+  // Ende des Ausklangs auf ihrem Platz und wird danach beendet, falls sie nicht neu angeschlagen wurde.
+  noteOff(midi, platz = "halte") {
+    const voice = this.voiceAt(midi, platz);
+    if (!voice || voice.releaseEnd !== null) return;
 
     const t = this.ctx.currentTime;
-    const instrument = this.instruments[this.currentInstrument];
+    const instrument = this.instruments[voice.instrumentKey];
+    const releaseEnd = t + instrument.releaseTime;
 
-    anchorGain(voice, gainAt(voice, t), t);
-    voice.gain.gain.exponentialRampToValueAtTime(MIN_GAIN, t + instrument.releaseTime);
-    voice.osc.stop(t + instrument.releaseTime + 0.02);
+    const current = gainAt(voice, t);
+    anchorGain(voice, current, t);
+    voice.gain.gain.exponentialRampToValueAtTime(MIN_GAIN, releaseEnd);
+    voice.releaseEnd = releaseEnd;
+    voice.envelope = { ...voice.envelope, release: { startTime: t, startGain: current, endTime: releaseEnd } };
 
-    this.voices.delete(midi);
+    this.scheduleFinish(voice);
+  }
+
+  scheduleFinish(voice) {
+    const remaining = Math.max(voice.releaseEnd - this.ctx.currentTime, 0);
+    this.schedule(() => this.finishVoice(voice), (remaining + 0.05) * 1000);
+  }
+
+  // Beendet eine ausgeklungene Stimme. Wurde sie inzwischen neu angeschlagen, bleibt sie. Ist der
+  // Ausklang noch nicht vorbei (erneut losgelassen, oder die Klangzeit läuft nach), wird später geprüft.
+  finishVoice(voice) {
+    if (voice.releaseEnd === null || voice.finished) return;
+    if (this.ctx.currentTime < voice.releaseEnd) {
+      this.scheduleFinish(voice);
+      return;
+    }
+    voice.finished = true;
+    voice.osc.stop();
+    voice.gain.disconnect();
+
+    const slots = this.voices.get(voice.midi);
+    if (!slots) return;
+    for (const platz of PLAETZE) {
+      if (slots[platz] === voice) slots[platz] = undefined;
+    }
+    if (!slots.halte && !slots.spiel) this.voices.delete(voice.midi);
   }
 }

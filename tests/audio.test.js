@@ -54,41 +54,154 @@ test("harmonicAmplitudes: Teiltöne über der halben Abtastrate entfallen", () =
   assert.equal(amplitudes[6], 0);
 });
 
-test("noteOn legt eine Stimme an, noteOff lässt sie ausklingen und vergisst sie", () => {
-  const engine = new AudioEngine("piano");
+// Engine mit von Hand ausgelösten Zeitgebern: `run()` führt alle fälligen aus.
+function makeEngine(instrument = "piano") {
+  const engine = new AudioEngine(instrument);
+  const timers = [];
+  engine.schedule = fn => timers.push(fn);
+  engine.run = () => { for (const fn of timers.splice(0)) fn(); };
+  return engine;
+}
+
+test("noteOn legt eine Stimme an; noteOff lässt sie ausklingen, danach wird sie beendet", () => {
+  const engine = makeEngine();
   engine.noteOn(60, 261);
-  const voice = engine.voices.get(60);
+  const voice = engine.voiceAt(60);
   assert.equal(voice.osc.started, 0);
   assert.deepEqual(voice.osc.frequency.calls[0], ["setValueAtTime", 261, 0]);
 
   engine.ctx.currentTime = 2;
   engine.noteOff(60);
-  assert.equal(engine.voices.has(60), false);
   assert.deepEqual(voice.gain.gain.calls.at(-1), ["exponentialRampToValueAtTime", 0.001, 2 + INSTRUMENTS.piano.releaseTime]);
-  assert.equal(voice.osc.stopped, 2 + INSTRUMENTS.piano.releaseTime + 0.02);
+  assert.equal(engine.voiceAt(60), voice);       // bleibt während des Ausklangs auf seinem Platz
+  assert.equal(voice.osc.stopped, null);
+
+  engine.ctx.currentTime = 2 + INSTRUMENTS.piano.releaseTime + 0.05;
+  engine.run();
+  assert.notEqual(voice.osc.stopped, null);
+  assert.equal(engine.voices.has(60), false);
 });
 
-test("Instrumentwechsel (Vorgabe): neue Stimme mit neuem Lautstärkeregler und fester Lautstärke", () => {
-  const engine = new AudioEngine("piano");
+test("Drücken während des Ausklangs schlägt dieselbe Stimme neu an, ab ihrer aktuellen Lautstärke", () => {
+  const engine = makeEngine();
   engine.noteOn(60, 261);
-  const before = engine.voices.get(60);
+  const voice = engine.voiceAt(60);
+  engine.ctx.currentTime = 1;
+  engine.noteOff(60);
+
+  engine.ctx.currentTime = 1.3;
+  engine.noteOn(60, 261);
+  assert.equal(engine.voiceAt(60), voice);
+  const start = voice.envelope.startGain;
+  assert.ok(start > 0.001 && start < INSTRUMENTS.piano.sustainGain);
+  assert.deepEqual(voice.gain.gain.calls.slice(-3)[0], ["exponentialRampToValueAtTime", start, 1.3]);
+  assert.deepEqual(voice.gain.gain.calls.at(-2), ["linearRampToValueAtTime", 1, 1.3 + INSTRUMENTS.piano.attackTime]);
+
+  // Der Zeitgeber des ersten Loslassens beendet die neu angeschlagene Stimme nicht.
+  engine.ctx.currentTime = 3;
+  engine.run();
+  assert.equal(voice.osc.stopped, null);
+  assert.equal(engine.voiceAt(60), voice);
+});
+
+test("Erneut losgelassen nach Neu-Anschlag: beendet erst nach dem zweiten Ausklang", () => {
+  const engine = makeEngine();
+  engine.noteOn(60, 261);
+  engine.ctx.currentTime = 1;
+  engine.noteOff(60);
+  engine.ctx.currentTime = 1.3;
+  engine.noteOn(60, 261);
+  engine.ctx.currentTime = 1.5;
+  engine.noteOff(60);
+  const voice = engine.voiceAt(60);
+
+  engine.ctx.currentTime = 1.85;                 // nach dem ersten, vor dem zweiten Ausklangsende
+  engine.run();
+  assert.equal(voice.osc.stopped, null);
+  engine.ctx.currentTime = 1.5 + INSTRUMENTS.piano.releaseTime;
+  engine.run();
+  assert.notEqual(voice.osc.stopped, null);
+  assert.equal(engine.voices.has(60), false);
+});
+
+test("Instrument im Ausklang gewechselt: neue Stimme, der alte Ausklang läuft zu Ende", () => {
+  const engine = makeEngine();
+  engine.noteOn(60, 261);
+  const old = engine.voiceAt(60);
+  engine.ctx.currentTime = 1;
+  engine.noteOff(60);
+  engine.setInstrument("pad");
+
+  engine.ctx.currentTime = 1.3;
+  engine.noteOn(60, 261);
+  const fresh = engine.voiceAt(60);
+  assert.notEqual(fresh, old);
+  assert.equal(fresh.instrumentKey, "pad");
+  assert.equal(old.osc.stopped, null);
+
+  engine.ctx.currentTime = 1 + INSTRUMENTS.piano.releaseTime + 0.05;
+  engine.run();
+  assert.notEqual(old.osc.stopped, null);
+  assert.equal(fresh.osc.stopped, null);
+  assert.equal(engine.voiceAt(60), fresh);
+});
+
+test("Instrumentwechsel lässt klingende Stimmen unverändert; Neu-Anschlag und Ausklang mit ihrem Instrument", () => {
+  const engine = makeEngine();
+  engine.noteOn(60, 261);
+  const voice = engine.voiceAt(60);
+  const callsBefore = voice.gain.gain.calls.length;
 
   engine.ctx.currentTime = 0.5;
   engine.setInstrument("pad");
-  const after = engine.voices.get(60);
+  assert.equal(voice.gain.gain.calls.length, callsBefore);
 
-  assert.notEqual(after.gain, before.gain);
-  assert.equal(before.osc.stopped, 0.52);
-  assert.equal(after.envelope.attackTime, 0);
-  assert.equal(after.envelope.sustainGain, after.envelope.startGain);
+  engine.noteOn(60, 261);
+  assert.equal(engine.voiceAt(60), voice);
+  assert.equal(voice.envelope.attackTime, INSTRUMENTS.piano.attackTime);
+
+  engine.ctx.currentTime = 1;
+  engine.noteOff(60);
+  assert.equal(voice.releaseEnd, 1 + INSTRUMENTS.piano.releaseTime);
+});
+
+test("Haltestimme und Spielstimme einer Taste sind getrennt", () => {
+  const engine = makeEngine();
+  engine.noteOn(60, 261, "halte");
+  engine.setInstrument("pad");
+  engine.noteOn(60, 261, "spiel");
+  const halte = engine.voiceAt(60, "halte");
+  const spiel = engine.voiceAt(60, "spiel");
+  assert.notEqual(halte, spiel);
+  assert.equal(halte.instrumentKey, "piano");
+  assert.equal(spiel.instrumentKey, "pad");
+
+  engine.ctx.currentTime = 1;
+  engine.noteOff(60, "spiel");
+  assert.equal(halte.releaseEnd, null);
+  engine.ctx.currentTime = 3;
+  engine.run();
+  assert.equal(engine.voiceAt(60, "spiel"), undefined);
+  assert.equal(engine.voiceAt(60, "halte"), halte);
+});
+
+test("Umstimmen erfasst klingende Stimmen beider Plätze", () => {
+  const engine = makeEngine();
+  engine.noteOn(60, 261, "halte");
+  engine.noteOn(60, 261, "spiel");
+  engine.retuneAllVoices(() => 264);
+  assert.equal(engine.voiceAt(60, "halte").baseFrequency, 264);
+  assert.equal(engine.voiceAt(60, "spiel").baseFrequency, 264);
 });
 
 test("Wellenform: innerhalb eines Halbtons wiederverwendet, bei anderer Tonhöhe derselben Taste neu berechnet (K5)", () => {
-  const engine = new AudioEngine("piano");
+  const engine = makeEngine();
   const waveOf = frequency => {
     engine.noteOn(60, frequency);
-    const wave = engine.voices.get(60).osc.wave;
+    const wave = engine.voiceAt(60).osc.wave;
     engine.noteOff(60);
+    engine.ctx.currentTime += 2;               // Ausklang vorbei: nächstes Drücken legt eine neue Stimme an
+    engine.run();
     return wave;
   };
 
