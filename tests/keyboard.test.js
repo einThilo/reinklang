@@ -119,6 +119,54 @@ test("keyPositions (Vorgabe): schwarze Randtaste ragt zur Hälfte hinaus, ohne w
   assert.deepEqual(keyPositions([]), []);
 });
 
+const close = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} statt ${expected}`);
+
+// Mitte einer Taste in Prozent der Klaviaturbreite.
+const middle = position => position.left + position.width / 2;
+
+test("keyPositions mit halben Randtasten (S11.2): weiße Randtasten ragen zur Hälfte hinaus", () => {
+  const positions = keyPositions([W, B, W, W], true);
+  close(middle(positions[0]), 0);
+  close(middle(positions[3]), 100);
+  // Zwei weiße Breiten sind sichtbar: von der Mitte der ersten bis zur Mitte der letzten Taste.
+  close(positions[0].width, 50);
+  close(positions[1].width, 0.9 * 50);
+  close(positions[2].left, 25);
+});
+
+test("keyPositions mit halben Randtasten: schwarze Randtasten ragen wie bisher zur Hälfte hinaus", () => {
+  const positions = keyPositions([B, W, B], true);
+  close(middle(positions[0]), 0);
+  close(middle(positions[2]), 100);
+  close(positions[1].left, 0);
+  close(positions[1].width, 100);
+});
+
+test("keyPositions mit halben Randtasten: Vorgabebereich A2–A#4, Mitte von A2 und A#4 auf dem Rand", () => {
+  const keys = Array.from({ length: 26 }, (_, index) => ({ isWhite: [0, 2, 4, 5, 7, 9, 11].includes((45 + index) % 12) }));
+  const positions = keyPositions(keys, true);
+  assert.equal(positions.length, 26);
+  close(middle(positions[0]), 0);
+  close(middle(positions[25]), 100);
+  // 15 weiße Tasten, davon die erste halb: 14,5 weiße Breiten sind sichtbar.
+  close(positions[2].width, 100 / 14.5);
+});
+
+test("keyPositions mit halben Randtasten: eine einzelne Taste füllt die Breite, auch eine schwarze (S10)", () => {
+  for (const only of [W, B]) {
+    const [position] = keyPositions([only], true);
+    close(position.left, 0);
+    close(position.width, 100);
+  }
+});
+
+test("Keyboard mit cutEdgeKeys gibt die halben Randtasten weiter", () => {
+  const keyboard = createKeyboard({ startMidi: 60, keyCount: 3, cutEdgeKeys: true });
+  assert.equal(keyboard.keyElements.get(60).style.left, "-50%");
+  assert.equal(keyboard.keyElements.get(60).style.width, "100%");
+  assert.equal(keyboard.keyElements.get(62).style.left, "50%");
+});
+
 test("Keyboard gibt die Lage als Prozentwerte an die Tasten weiter", () => {
   const keyboard = createKeyboard({ startMidi: 60, keyCount: 3 });
   assert.equal(keyboard.keyElements.get(60).style.left, "0%");

@@ -27,7 +27,8 @@ function init() {
     container: document.getElementById("keyboard"),
     startMidi: state.keyboardStartMidi,
     keyCount: state.keyboardKeyCount,
-    transposeOffset: state.transpose
+    transposeOffset: state.transpose,
+    cutEdgeKeys: true
   });
 
   const harmonyKeyboard = new Keyboard({

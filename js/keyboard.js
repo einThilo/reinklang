@@ -9,6 +9,8 @@ export class Keyboard {
     this.keyCount = options.keyCount ?? 24;
     // Verschiebt die Farben (weiß/schwarz) gegenüber den klingenden Tönen.
     this.transposeOffset = options.transposeOffset ?? 0;
+    // Unterste und oberste Taste ragen zur Hälfte über den Rand, weiß wie schwarz (S11.2).
+    this.cutEdgeKeys = options.cutEdgeKeys ?? false;
 
     this.keys = [];
     this.keyElements = new Map();
@@ -96,7 +98,7 @@ export class Keyboard {
   }
 
   layoutKeys() {
-    const positions = keyPositions(this.keys);
+    const positions = keyPositions(this.keys, this.cutEdgeKeys);
 
     this.keys.forEach((key, index) => {
       const element = this.keyElements.get(key.midi);
@@ -208,19 +210,30 @@ export class Keyboard {
 // Weiße Tasten teilen die Breite unter sich auf; eine schwarze Taste ist 0,9 weiße Tasten breit und
 // sitzt mittig auf der Grenze zur nächsten weißen. Am Rand des Bereichs ragt sie deshalb zur Hälfte
 // hinaus, und ohne weiße Taste gibt es keine Lage (leere Liste).
-export function keyPositions(keys) {
-  const total = keys.filter(key => key.isWhite).length;
-  if (total === 0) return [];
-
+// Mit `cutEdgeKeys` (S11.2) reicht der sichtbare Bereich von der Mitte der ersten bis zur Mitte der
+// letzten Taste, beide ragen also zur Hälfte hinaus. Eine einzelne Taste füllt die ganze Breite.
+export function keyPositions(keys, cutEdgeKeys = false) {
+  // Lage in weißen Tastenbreiten, gezählt ab dem linken Rand der ersten weißen Taste.
   let whiteIndex = 0;
-  return keys.map(key => {
-    if (key.isWhite) {
-      const position = { left: (whiteIndex / total) * 100, width: (1 / total) * 100 };
-      whiteIndex++;
-      return position;
-    }
-    return { left: ((whiteIndex - 0.45) / total) * 100, width: (0.9 / total) * 100 };
+  const spans = keys.map(key => {
+    if (key.isWhite) return { start: whiteIndex++, width: 1 };
+    return { start: whiteIndex - 0.45, width: 0.9 };
   });
+
+  let from = 0;
+  let to = whiteIndex;
+  if (cutEdgeKeys && spans.length === 1) {
+    from = spans[0].start;
+    to = spans[0].start + spans[0].width;
+  } else if (cutEdgeKeys && spans.length > 1) {
+    const middle = span => span.start + span.width / 2;
+    from = middle(spans[0]);
+    to = middle(spans[spans.length - 1]);
+  }
+
+  const total = to - from;
+  if (total <= 0) return [];
+  return spans.map(span => ({ left: ((span.start - from) / total) * 100, width: (span.width / total) * 100 }));
 }
 
 export function clamp(value, min, max) {
