@@ -451,3 +451,24 @@ body.layout-ecken #app {
     "sustain  rootkeys fullscreen autoroot   autoroot  use"
     "keyboard keyboard keyboard   keyboard   keyboard  keyboard";
 }
+
+/* ============================================================
+   Prototypen, gewählt mit ?name=wert (siehe js/options.js).
+   ============================================================ */
+
+/* S2.2 (?start=tippen): Fläche „Tippen zum Starten“ über der ganzen Seite. */
+#start-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  font-size: clamp(20px, 6vmin, 40px);
+  font-weight: bold;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
