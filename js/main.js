@@ -80,6 +80,12 @@ function init() {
   document.addEventListener("contextmenu", event => {
     event.preventDefault();
   });
+
+  // Prototyp S1.1 (`?diagnose=1`): Das Feld aus diagnose.js erfährt, dass der Start durchgelaufen ist.
+  if (window.reinklangDiagnose) {
+    window.reinklangDiagnose.report("Klang", () => (audioEngine.ctx ? audioEngine.ctx.state : "noch nicht angelegt"));
+    window.reinklangDiagnose.report("main.js", "gestartet");
+  }
 }
 
 // Bereich der Grundton-Klaviatur: eine Oktave ab dem (transponierten) C4.
