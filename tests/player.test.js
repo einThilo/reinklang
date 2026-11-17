@@ -107,26 +107,14 @@ test("Sustain: Tippen hält den Ton, erneutes Tippen beendet ihn", () => {
   assert.equal(held.get(60), false);
 });
 
-test("holdPressedKeys nimmt gedrückte Tasten zu den gehaltenen auf (S3)", () => {
-  const { synth, log, held } = createSynth();
-  assert.equal(synth.holdPressedKeys(), false);
-
-  synth.handlePointerEvent("down", 60);
-  assert.equal(synth.holdPressedKeys(), true);
-  assert.equal(held.get(60), true);
-
-  synth.handlePointerEvent("up", 60);
-  assert.deepEqual(log, [["noteOn", 60, 600]]);
-  assert.deepEqual([...synth.activeNotes], [60]);
-});
-
 test("Release beendet gehaltene Töne, aber keine noch gedrückten", () => {
   const { synth, log } = createSynth();
   let notifications = 0;
 
   synth.handlePointerEvent("down", 60);
   synth.handlePointerEvent("down", 64);
-  synth.holdPressedKeys();
+  synth.pedalDown();
+  assert.equal(synth.pedalUp(), "hold");
   synth.handlePointerEvent("up", 60);
 
   synth.onNotesChanged = () => notifications++;

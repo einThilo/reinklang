@@ -24,19 +24,6 @@ export class SynthController {
     this.sustainEnabled = enabled;
   }
 
-  // Nimmt die gerade gedrückten Tasten zu den gehaltenen auf; liefert, ob es welche gab.
-  holdPressedKeys() {
-    let found = false;
-    for (let midi = 0; midi < 128; midi++) {
-      if (this.physicalPresses[midi] > 0) {
-        this.isHeld[midi] = true;
-        this.updateKeyboardVisuals(midi);
-        found = true;
-      }
-    }
-    return found;
-  }
-
   // Pedal treten: Die gerade gedrückten Tasten gehören von Anfang an dazu.
   pedalDown() {
     this.pedalActive = true;
