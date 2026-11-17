@@ -1,7 +1,6 @@
 // Schalter für Prototypen aus der Adresse (?name=wert). Es gelten nur die hier genannten Namen
 // und Werte; alles andere ergibt null, also die Vorgabe. Beschreibung je Schalter: docs/PROTOTYPEN.md.
 export const SWITCHES = {
-  start: ["tippen"],
   sustain: ["pedal"],
   grundton: ["haeuser"],
   abweichung: ["1"],

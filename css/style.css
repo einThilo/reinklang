@@ -524,7 +524,7 @@ body.layout-band-gruppe .auto-btn {
    Prototypen, gewählt mit ?name=wert (siehe js/options.js).
    ============================================================ */
 
-/* S2.2 (?start=tippen): Fläche „Tippen zum Starten“ über der ganzen Seite. */
+/* Startfläche „Tippen zum Starten“ über der ganzen Seite (S2.2). */
 #start-overlay {
   position: fixed;
   inset: 0;

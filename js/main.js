@@ -71,7 +71,7 @@ function init() {
   setupFullscreen();
   if (options.abweichung) setupDeviation(harmonyKeyboard);
 
-  if (options.start === "tippen") setupStartOverlay(audioEngine);
+  setupStartOverlay(audioEngine);
 
   document.body.addEventListener(
     "pointerdown",
@@ -398,7 +398,7 @@ function setupTranspose(mainKeyboard, harmonyKeyboard, updateRootHighlight) {
   updateTransposeDisplay();
 }
 
-// Prototyp S2.2 (`?start=tippen`): Fläche über der ganzen Seite. Der Browser lässt den Klang erst nach
+// Startfläche „Tippen zum Starten“ über der ganzen Seite (S2.2). Der Browser lässt den Klang erst nach
 // einer Nutzeraktion zu, und bei Berührung zählt erst das Loslassen; der erste Tipp gilt deshalb der Fläche.
 function setupStartOverlay(audioEngine) {
   const overlay = document.createElement("div");
