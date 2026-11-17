@@ -2,7 +2,8 @@
 // und Werte; alles andere ergibt null, also die Vorgabe. Beschreibung je Schalter: docs/PROTOTYPEN.md.
 export const SWITCHES = {
   sperren: ["aus"],
-  start: ["tippen"]
+  start: ["tippen"],
+  sustain: ["pedal"]
 };
 
 export function readOptions(search) {

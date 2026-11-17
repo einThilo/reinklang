@@ -229,17 +229,21 @@ function setupSustain(synth) {
     btnSustain.classList.toggle("selected", state.sustain);
   }
 
-  // Sind Tasten gedrückt, werden sie gehalten und Sustain bleibt aus (kurzes Aufleuchten);
-  // sonst schaltet der Button Sustain um.
-  btnSustain.addEventListener("pointerdown", event => {
-    event.preventDefault();
-    if (!state.sustain && synth.holdPressedKeys()) {
-      btnSustain.classList.add("selected");
-      setTimeout(() => btnSustain.classList.remove("selected"), 120);
-      return;
-    }
-    setState("sustain", !state.sustain);
-  });
+  if (options.sustain === "pedal") {
+    setupSustainPedal(synth, btnSustain, updateSustainVisual);
+  } else {
+    // Sind Tasten gedrückt, werden sie gehalten und Sustain bleibt aus (kurzes Aufleuchten);
+    // sonst schaltet der Button Sustain um.
+    btnSustain.addEventListener("pointerdown", event => {
+      event.preventDefault();
+      if (!state.sustain && synth.holdPressedKeys()) {
+        btnSustain.classList.add("selected");
+        setTimeout(() => btnSustain.classList.remove("selected"), 120);
+        return;
+      }
+      setState("sustain", !state.sustain);
+    });
+  }
 
   btnRelease.addEventListener("pointerdown", event => {
     event.preventDefault();
@@ -255,6 +259,34 @@ function setupSustain(synth) {
     updateSustainVisual();
   });
   updateSustainVisual();
+}
+
+// Prototyp W4.1 (`?sustain=pedal`): Der Sustain-Button wirkt als Pedal, solange er gedrückt ist.
+// Wird währenddessen keine Taste angeschlagen, wirkt er beim Loslassen wie bisher (siehe `pedalUp`).
+function setupSustainPedal(synth, btnSustain, updateSustainVisual) {
+  let pedalPointer = null;
+
+  btnSustain.addEventListener("pointerdown", event => {
+    event.preventDefault();
+    if (pedalPointer !== null) return;
+    pedalPointer = event.pointerId;
+    try {
+      btnSustain.setPointerCapture(event.pointerId);
+    } catch {}
+    synth.pedalDown();
+    btnSustain.classList.add("selected");
+  });
+
+  const release = event => {
+    if (event.pointerId !== pedalPointer) return;
+    pedalPointer = null;
+    const result = synth.pedalUp();
+    if (result === "toggle") setState("sustain", !state.sustain);
+    if (result === "pedal") setState("sustain", false);
+    updateSustainVisual();
+  };
+  btnSustain.addEventListener("pointerup", release);
+  btnSustain.addEventListener("pointercancel", release);
 }
 
 // Stimmton: Zahlenfeld und +/−.
