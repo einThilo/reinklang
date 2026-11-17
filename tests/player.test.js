@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { SynthController, pickAutoRoot, connectAutoRoot } from "../js/player.js";
-import { state, setState } from "../js/state.js";
+import { state, setState, setStates } from "../js/state.js";
 
 // Attrappen für Klaviatur und Klang; `log` hält die Aufrufe an den Klang in Reihenfolge fest.
 function createSynth() {
@@ -257,6 +257,7 @@ test("Pedal meldet Tonänderungen beim Loslassen genau einmal", () => {
 // Diese Tests teilen sich das eine `state`-Objekt und laufen der Reihe nach.
 
 test("connectAutoRoot „Erster“: erster Ton nach Stille wird Grundton", () => {
+  setState("useTuning", true);
   const { synth } = createSynth();
   connectAutoRoot(synth);
   setState("harmonyMode", "first");
@@ -317,4 +318,30 @@ test("connectAutoRoot „Manuell“: Grundton bleibt", () => {
   synth.handlePointerEvent("down", 50);
 
   assert.equal(state.rootMidi, 65);
+});
+
+test("connectAutoRoot: sucht nur bei eingeschaltetem Tuning, „Tiefster“ sofort beim Einschalten (L7)", () => {
+  const { synth } = createSynth();
+  connectAutoRoot(synth);
+  setStates({ harmonyMode: "lowest", rootMidi: 70, useTuning: false });
+
+  synth.handlePointerEvent("down", 55);
+  assert.equal(state.rootMidi, 70);
+
+  setState("useTuning", true);
+  assert.equal(state.rootMidi, 55);
+});
+
+test("connectAutoRoot: „Erster“ wartet nach dem Einschalten auf den nächsten Anschlag nach Stille (L7)", () => {
+  const { synth } = createSynth();
+  connectAutoRoot(synth);
+  setStates({ harmonyMode: "first", rootMidi: 70, useTuning: false });
+
+  synth.handlePointerEvent("down", 57);
+  setState("useTuning", true);
+  assert.equal(state.rootMidi, 70);
+
+  synth.handlePointerEvent("up", 57);
+  synth.handlePointerEvent("down", 59);
+  assert.equal(state.rootMidi, 59);
 });

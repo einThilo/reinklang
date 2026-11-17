@@ -157,7 +157,8 @@ export function pickAutoRoot(mode, activeNotes, previousCount) {
 }
 
 // Verbindet die Grundton-Automatik mit einem SynthController: Bei jeder Änderung der
-// klingenden Töne und bei jedem Wechsel des Harmoniemodus wird die Regel befragt.
+// klingenden Töne, bei jedem Wechsel des Harmoniemodus und beim Einschalten des Tunings wird die
+// Regel befragt. Bei ausgeschaltetem Tuning bleibt der Grundton, wie er ist (L7).
 export function connectAutoRoot(synth) {
   let previousCount = 0;
 
@@ -165,7 +166,7 @@ export function connectAutoRoot(synth) {
     const activeNotes = Array.from(synth.activeNotes);
     const newRoot = pickAutoRoot(state.harmonyMode, activeNotes, previousCount);
 
-    if (newRoot !== null) setState("rootMidi", newRoot);
+    if (newRoot !== null && state.useTuning) setState("rootMidi", newRoot);
 
     previousCount = activeNotes.length;
   }
@@ -173,6 +174,6 @@ export function connectAutoRoot(synth) {
   synth.onNotesChanged = update;
 
   onStateChange(key => {
-    if (key === "harmonyMode") update();
+    if (key === "harmonyMode" || key === "useTuning") update();
   });
 }
