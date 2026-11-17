@@ -496,7 +496,10 @@ if (options.sperren !== "aus") {
   let lastTouchEnd = 0;
   document.addEventListener('touchend', (e) => {
     const now = Date.now();
-    if (now - lastTouchEnd <= 300) {
+    // Auswahllisten und Eingabefelder sind ausgenommen: Sonst ginge ihr Klick verloren, wenn man sie
+    // direkt nach dem Spielen antippt (S13).
+    const onFormControl = e.target.closest && e.target.closest("select, input");
+    if (now - lastTouchEnd <= 300 && !onFormControl) {
       e.preventDefault();
     }
     lastTouchEnd = now;
