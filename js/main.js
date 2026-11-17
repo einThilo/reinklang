@@ -362,8 +362,13 @@ function setupFullscreen() {
     fullscreenButton.textContent = document.fullscreenElement ? "Exit fullscreen" : "Fullscreen";
   }
 
-  fullscreenButton.addEventListener("pointerdown", async event => {
+  fullscreenButton.addEventListener("pointerdown", event => {
     event.preventDefault();
+  });
+
+  // Umgeschaltet wird beim Loslassen: Der Browser erlaubt Vollbild nur aus einer Nutzeraktion,
+  // und bei Berührung zählt erst das Loslassen als solche.
+  fullscreenButton.addEventListener("pointerup", async () => {
     try {
       if (document.fullscreenElement) {
         await document.exitFullscreen();
