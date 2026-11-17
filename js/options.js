@@ -6,7 +6,8 @@ export const SWITCHES = {
   sustain: ["pedal"],
   wechsel: ["weich"],
   grundton: ["haeuser"],
-  abweichung: ["1"]
+  abweichung: ["1"],
+  wach: ["1"]
 };
 
 export function readOptions(search) {
