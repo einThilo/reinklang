@@ -27,15 +27,13 @@ function init() {
     container: document.getElementById("keyboard"),
     startMidi: state.keyboardStartMidi,
     keyCount: state.keyboardKeyCount,
-    transposeOffset: state.transpose,
-    fullEdgeKeys: options.rand === "ganz"
+    transposeOffset: state.transpose
   });
 
   const harmonyKeyboard = new Keyboard({
     container: document.getElementById("harmony-keyboard"),
     ...harmonyRange(),
-    transposeOffset: state.transpose,
-    fullEdgeKeys: options.rand === "ganz"
+    transposeOffset: state.transpose
   });
 
   const audioEngine = new AudioEngine(state.instrument);

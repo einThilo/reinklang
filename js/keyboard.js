@@ -9,8 +9,6 @@ export class Keyboard {
     this.keyCount = options.keyCount ?? 24;
     // Verschiebt die Farben (weiß/schwarz) gegenüber den klingenden Tönen.
     this.transposeOffset = options.transposeOffset ?? 0;
-    // Prototyp S11.1 (`?rand=ganz`): schwarze Tasten am Rand des Bereichs ganz zeigen.
-    this.fullEdgeKeys = options.fullEdgeKeys ?? false;
 
     this.keys = [];
     this.keyElements = new Map();
@@ -98,7 +96,7 @@ export class Keyboard {
   }
 
   layoutKeys() {
-    const positions = keyPositions(this.keys, this.fullEdgeKeys);
+    const positions = keyPositions(this.keys);
 
     this.keys.forEach((key, index) => {
       const element = this.keyElements.get(key.midi);
@@ -210,23 +208,18 @@ export class Keyboard {
 // Weiße Tasten teilen die Breite unter sich auf; eine schwarze Taste ist 0,9 weiße Tasten breit und
 // sitzt mittig auf der Grenze zur nächsten weißen. Am Rand des Bereichs ragt sie deshalb zur Hälfte
 // hinaus, und ohne weiße Taste gibt es keine Lage (leere Liste).
-// Mit `fullEdgeKeys` (Prototyp S11.1) bleibt am Rand Platz für die ganze schwarze Taste.
-export function keyPositions(keys, fullEdgeKeys = false) {
-  const whiteCount = keys.filter(key => key.isWhite).length;
-  const edge = key => (fullEdgeKeys && key && !key.isWhite ? 0.45 : 0);
-  const offset = edge(keys[0]);
-  const total = whiteCount + offset + edge(keys[keys.length - 1]);
-
+export function keyPositions(keys) {
+  const total = keys.filter(key => key.isWhite).length;
   if (total === 0) return [];
 
   let whiteIndex = 0;
   return keys.map(key => {
     if (key.isWhite) {
-      const position = { left: ((offset + whiteIndex) / total) * 100, width: (1 / total) * 100 };
+      const position = { left: (whiteIndex / total) * 100, width: (1 / total) * 100 };
       whiteIndex++;
       return position;
     }
-    return { left: ((offset + whiteIndex - 0.45) / total) * 100, width: (0.9 / total) * 100 };
+    return { left: ((whiteIndex - 0.45) / total) * 100, width: (0.9 / total) * 100 };
   });
 }
 
