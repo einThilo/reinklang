@@ -452,6 +452,51 @@ body.layout-ecken #app {
     "keyboard keyboard keyboard   keyboard   keyboard  keyboard";
 }
 
+/* --- Variante "klassisch-2" (L1.2): Aufbau der Vorgabe mit W3, L3, L4, L5 ---
+   Harmonie-Automatik zwei Drittel hoch, darunter Fullscreen klein; Tuning, Use tuning, Stimmton und
+   Transposition als Block; Tastenbereich als Spalte am rechten Rand; Klaviatur wie in der Vorgabe. */
+body.layout-klassisch-2 #app {
+  grid-template-columns:
+    minmax(0, 6fr) minmax(0, 2fr) minmax(0, 2.5fr)
+    minmax(0, 2fr) minmax(0, 2.5fr) minmax(0, 2fr);
+  grid-template-rows: repeat(6, minmax(0, 14fr)) minmax(0, 147fr);
+  grid-template-areas:
+    "rootkeys autoroot   sustain  instrument instrument range"
+    "rootkeys autoroot   sustain  instrument instrument range"
+    "rootkeys autoroot   sustain  tuning     pitch      range"
+    "rootkeys autoroot   release  tuning     pitch      range"
+    "rootkeys fullscreen release  use        transpose  range"
+    "rootkeys fullscreen release  use        transpose  range"
+    "keyboard keyboard   keyboard keyboard   keyboard   keyboard";
+}
+
+/* Schwarze Tasten so lang wie in der Vorgabe (die Klaviatur ist hier nicht niedriger). */
+body.layout-klassisch-2 #keyboard {
+  --black-key-height: 60%;
+}
+
+/* Harmonie-Automatik liegt wie in der Vorgabe neben der Grundton-Klaviatur. */
+body.layout-klassisch-2 #harmony-auto {
+  border-right: 4px solid #000;
+}
+
+/* Tastenbereich: drei Zeilen << < | > >> | - +. */
+body.layout-klassisch-2 #keyboard-tools {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+}
+
+body.layout-klassisch-2 #keyboard-tools [data-action="decKeys"],
+body.layout-klassisch-2 #keyboard-tools [data-action="incKeys"] {
+  grid-column: auto;
+}
+
+/* Stimmton: Zahl größer (W3). */
+body.layout-klassisch-2 .tone-input-group input {
+  flex: 1.3 1 0;
+  font-size: clamp(16px, 5vmin, 28px);
+}
+
 /* ============================================================
    Prototypen, gewählt mit ?name=wert (siehe js/options.js).
    ============================================================ */
