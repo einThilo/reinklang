@@ -3,7 +3,8 @@
 export const SWITCHES = {
   sperren: ["aus"],
   start: ["tippen"],
-  sustain: ["pedal"]
+  sustain: ["pedal"],
+  wechsel: ["weich"]
 };
 
 export function readOptions(search) {

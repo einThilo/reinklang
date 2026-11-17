@@ -35,7 +35,7 @@ function init() {
     transposeOffset: state.transpose
   });
 
-  const audioEngine = new AudioEngine(state.instrument);
+  const audioEngine = new AudioEngine(state.instrument, { softSwitch: options.wechsel === "weich" });
 
   const frequencyOf = midi => frequencyFromState(midi, state);
 
