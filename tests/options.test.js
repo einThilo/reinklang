@@ -10,13 +10,13 @@ test("ohne Zusatz in der Adresse sind alle Schalter null", () => {
 });
 
 test("bekannter Name mit bekanntem Wert wird übernommen", () => {
-  assert.equal(readOptions("?sperren=aus").sperren, "aus");
-  assert.equal(readOptions("?layout=band&sperren=aus").sperren, "aus");
+  assert.equal(readOptions("?wach=1").wach, "1");
+  assert.equal(readOptions("?layout=band&wach=1").wach, "1");
 });
 
 test("unbekannter Wert oder unbekannter Name gilt als Vorgabe", () => {
-  assert.equal(readOptions("?sperren=an").sperren, null);
-  assert.equal(readOptions("?sperren").sperren, null);
+  assert.equal(readOptions("?wach=2").wach, null);
+  assert.equal(readOptions("?wach").wach, null);
   assert.equal(Object.hasOwn(readOptions("?unbekannt=1"), "unbekannt"), false);
 });
 

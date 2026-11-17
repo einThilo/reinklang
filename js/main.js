@@ -485,25 +485,23 @@ function setupFullscreen() {
   updateFullscreenButton();
 }
 
-// Berührungssperren gegen Zoomen; `?sperren=aus` lässt sie weg (Prototyp S2.1).
-if (options.sperren !== "aus") {
-  // Prevent pinch-to-zoom and multi-touch gestures
-  document.addEventListener('touchstart', (e) => {
-    if (e.touches.length > 1) {
-      e.preventDefault();
-    }
-  }, { passive: false });
+// Berührungssperren gegen Zoomen.
+// Prevent pinch-to-zoom and multi-touch gestures
+document.addEventListener('touchstart', (e) => {
+  if (e.touches.length > 1) {
+    e.preventDefault();
+  }
+}, { passive: false });
 
-  // Prevent double-tap-to-zoom on rapid interactions
-  let lastTouchEnd = 0;
-  document.addEventListener('touchend', (e) => {
-    const now = Date.now();
-    // Auswahllisten und Eingabefelder sind ausgenommen: Sonst ginge ihr Klick verloren, wenn man sie
-    // direkt nach dem Spielen antippt (S13).
-    const onFormControl = e.target.closest && e.target.closest("select, input");
-    if (now - lastTouchEnd <= 300 && !onFormControl) {
-      e.preventDefault();
-    }
-    lastTouchEnd = now;
-  }, { passive: false });
-}
+// Prevent double-tap-to-zoom on rapid interactions
+let lastTouchEnd = 0;
+document.addEventListener('touchend', (e) => {
+  const now = Date.now();
+  // Auswahllisten und Eingabefelder sind ausgenommen: Sonst ginge ihr Klick verloren, wenn man sie
+  // direkt nach dem Spielen antippt (S13).
+  const onFormControl = e.target.closest && e.target.closest("select, input");
+  if (now - lastTouchEnd <= 300 && !onFormControl) {
+    e.preventDefault();
+  }
+  lastTouchEnd = now;
+}, { passive: false });
