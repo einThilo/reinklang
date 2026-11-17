@@ -447,8 +447,6 @@ function setupLayout() {
   if (LAYOUTS.includes(name)) {
     document.body.classList.add(`layout-${name}`);
   }
-  // Prototyp L6.1 (`?grundton=haeuser`): Form der Grundton-Tasten, Regeln in style.css.
-  if (options.grundton) document.body.classList.add(`grundton-${options.grundton}`);
 }
 
 // Fullscreen-Button.

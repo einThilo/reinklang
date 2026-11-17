@@ -2,7 +2,6 @@
 // und Werte; alles andere ergibt null, also die Vorgabe. Beschreibung je Schalter: docs/PROTOTYPEN.md.
 export const SWITCHES = {
   sustain: ["pedal"],
-  grundton: ["haeuser"],
   abweichung: ["1"],
   wach: ["1"]
 };

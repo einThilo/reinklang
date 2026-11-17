@@ -541,32 +541,32 @@ body.layout-band-gruppe .auto-btn {
   touch-action: none;
 }
 
-/* L6.1 (?grundton=haeuser): Grundton-Tasten als „Häuser“. Weiße Tasten: flache Unterkante, senkrechte
+/* Grundton-Tasten als „Häuser“ (L6.1). Weiße Tasten: flache Unterkante, senkrechte
    Seiten, Dachspitze in der Mitte (Dachansatz bei 60 %, Spitze bei 36 % der Höhe). Schwarze Tasten:
    umgedreht, so breit wie die weißen, Spitze knapp über dem Tal zwischen zwei Dächern.
    Die Form begrenzt auch die Fläche, die auf Berührung reagiert. */
-body.grundton-haeuser #harmony-keyboard .keyboard {
+#harmony-keyboard .keyboard {
   background: #666;
 }
 
-body.grundton-haeuser #harmony-keyboard .key {
+#harmony-keyboard .key {
   border: none;
   border-radius: 0;
   box-shadow: none;
 }
 
-body.grundton-haeuser #harmony-keyboard .key.white {
+#harmony-keyboard .key.white {
   clip-path: polygon(1px 100%, 1px 60%, 50% 36%, calc(100% - 1px) 60%, calc(100% - 1px) 100%);
 }
 
-body.grundton-haeuser #harmony-keyboard .key.black {
+#harmony-keyboard .key.black {
   height: 58%;
   /* keyboard.js gibt schwarzen Tasten 90 % der Breite einer weißen; hier volle Breite. */
   transform: scaleX(1.1111);
   clip-path: polygon(1px 0, calc(100% - 1px) 0, calc(100% - 1px) 58.6%, 50% 100%, 1px 58.6%);
 }
 
-body.grundton-haeuser #harmony-keyboard .key.black .key-label {
+#harmony-keyboard .key.black .key-label {
   top: 4px;
   bottom: auto;
 }
