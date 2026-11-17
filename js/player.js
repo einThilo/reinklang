@@ -18,6 +18,15 @@ export class SynthController {
 
     this.activeNotes = new Set();
     this.onNotesChanged = () => {};
+
+    // Meldet, ob es gehaltene Tasten gibt (also Release etwas beenden würde), nur bei Änderung (W6).
+    // Töne, die nur das getretene Pedal hält, zählen nicht.
+    this.hasHeld = false;
+    this.onHeldChanged = () => {};
+  }
+
+  hasHeldKeys() {
+    return this.isHeld.some(Boolean);
   }
 
   setSustainEnabled(enabled) {
@@ -129,6 +138,12 @@ export class SynthController {
   updateKeyboardVisuals(midi) {
     this.keyboard.setHeldState(midi, this.isHeld[midi] || this.pedalNotes.has(midi));
     this.keyboard.setActiveState(midi, this.physicalPresses[midi] > 0);
+
+    const hasHeld = this.hasHeldKeys();
+    if (hasHeld !== this.hasHeld) {
+      this.hasHeld = hasHeld;
+      this.onHeldChanged(hasHeld);
+    }
   }
 }
 

@@ -169,6 +169,11 @@ html, body {
   background: #d22;
 }
 
+/* Release mit Rahmen im Rot der gehaltenen Tasten, solange es gehaltene Tasten gibt (W6). */
+#btn-release.has-held {
+  box-shadow: inset 0 0 0 4px #a44;
+}
+
 /* Beschriftung von Buttons lässt sich nicht als Text markieren */
 button {
   user-select: none;

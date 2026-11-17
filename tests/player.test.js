@@ -333,3 +333,23 @@ test("connectAutoRoot: „Erster“ wartet nach dem Einschalten auf den nächste
   synth.handlePointerEvent("down", 59);
   assert.equal(state.rootMidi, 59);
 });
+
+test("onHeldChanged meldet gehaltene Tasten nur bei Änderung; Pedal-Töne zählen nicht (W6)", () => {
+  const { synth } = createSynth();
+  const reports = [];
+  synth.onHeldChanged = value => reports.push(value);
+
+  synth.pedalDown();
+  synth.handlePointerEvent("down", 60);
+  synth.handlePointerEvent("up", 60);
+  assert.deepEqual(reports, []);
+  synth.pedalUp();
+
+  synth.setSustainEnabled(true);
+  synth.handlePointerEvent("down", 60);
+  synth.handlePointerEvent("down", 64);
+  assert.deepEqual(reports, [true]);
+
+  synth.releaseAllHeldKeys();
+  assert.deepEqual(reports, [true, false]);
+});

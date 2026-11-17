@@ -257,6 +257,9 @@ function setupSustain(synth) {
     }, 120);
   });
 
+  // Rahmen im Rot der gehaltenen Tasten, solange Release etwas beenden würde (W6).
+  synth.onHeldChanged = hasHeld => btnRelease.classList.toggle("has-held", hasHeld);
+
   onStateChange(["sustain"], (key, value) => {
     synth.setSustainEnabled(value);
     updateSustainVisual();
