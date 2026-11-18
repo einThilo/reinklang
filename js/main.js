@@ -77,6 +77,7 @@ function init() {
   setupDeviation(harmonyKeyboard);
 
   setupStartOverlay(audioEngine);
+  registerServiceWorker();
 
   document.body.addEventListener(
     "pointerdown",
@@ -445,6 +446,12 @@ function setupLayout() {
   if (name === "alt") return;
   const chosen = LAYOUTS.includes(name) ? name : DEFAULT_LAYOUT;
   document.body.classList.add(`layout-${chosen}`);
+}
+
+// Z7: Service Worker für den Start ohne Netz (sw.js). Gibt es nur über https:// oder localhost.
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  navigator.serviceWorker.register("sw.js").catch(err => console.error("Service Worker:", err));
 }
 
 // Fullscreen-Button.
