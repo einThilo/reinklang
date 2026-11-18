@@ -1,4 +1,4 @@
-// Hält den Bildschirm wach, solange die Seite sichtbar ist (Prototyp W5.1, `?wach=1`).
+// Hält den Bildschirm wach, solange die Seite sichtbar ist (W5, seit 2026-11-18 Vorgabe).
 // Der Browser gibt die Sperre frei, sobald die Seite verdeckt wird; beim Zurückkehren wird sie neu
 // angefordert. Ohne Unterstützung (z. B. über `http://`) geschieht nichts.
 // `nav` und `doc` sind `navigator` und `document`; sie werden übergeben, damit sich das ohne Browser testen lässt.
