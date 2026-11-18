@@ -7,6 +7,7 @@ import { SynthController, connectAutoRoot } from "./player.js";
 import { state, setState, setStates, onStateChange, LIMITS } from "./state.js";
 import { readOptions } from "./options.js";
 import { keepScreenAwake } from "./wakelock.js";
+import { isInstalledApp } from "./installed.js";
 
 // Schalter für Prototypen (?name=wert), siehe options.js.
 const options = readOptions(location.search);
@@ -450,6 +451,13 @@ function setupLayout() {
 function setupFullscreen() {
   const appRoot = document.getElementById("app");
   const fullscreenButton = document.getElementById("fullscreen-toggle");
+
+  // Z7: Als installierte App läuft die Seite schon im Vollbild; der Knopf entfällt, sein Platz bleibt
+  // vorerst leer (Z15).
+  if (isInstalledApp()) {
+    fullscreenButton.hidden = true;
+    return;
+  }
 
   // Symbol „⛶“ in beiden Zuständen (L5); der Hinweis beim Darüberfahren sagt, was der Tipp bewirkt.
   function updateFullscreenButton() {

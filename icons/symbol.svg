@@ -1,0 +1,14 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Reinklang-Symbol (Z7, Entwurf 9j aus werkzeug/symbole.html): C bis E mit Cis und Es, Grundton C rot.
+       Jede Taste kippt um ihre Oberkante nach ihrem reinen Wert (0,3° je Cent; Unterkante links = tiefer):
+       Cis +12, D +4, Es +16, E −14 Cent. PNGs daraus mit Inkscape (192, 512, apple-touch-icon 180). -->
+  <rect width="512" height="512" fill="#fff"/>
+  <g stroke="#222" stroke-width="5">
+    <rect x="119" y="126" width="87.3" height="260" rx="8" fill="#fff"/>
+    <rect x="212.3" y="126" width="87.3" height="260" rx="8" fill="#fff" transform="rotate(-1.2 256 126)"/>
+    <rect x="305.7" y="126" width="87.3" height="260" rx="8" fill="#fff" transform="rotate(4.2 349.3 126)"/>
+    <rect x="182.3" y="126" width="54" height="156" rx="8" fill="#222" transform="rotate(-3.6 209.3 126)"/>
+    <rect x="275.7" y="126" width="54" height="156" rx="8" fill="#222" transform="rotate(-4.8 302.7 126)"/>
+  </g>
+  <circle cx="162.7" cy="350" r="15" fill="#d22"/>
+</svg>
