@@ -13,7 +13,7 @@ const options = readOptions(location.search);
 
 // Layout-Varianten: ?layout=<name> setzt die Klasse layout-<name> am <body>
 // (Regeln dazu in css/style.css). Ohne Zusatz oder bei unbekanntem Namen gilt die Vorgabe.
-const LAYOUTS = ["band", "band-unten", "ecke", "ecken", "klassisch-2", "band-gruppe"];
+const LAYOUTS = ["band", "band-unten", "ecke", "ecken", "klassisch-2", "band-gruppe", "block1", "block2", "block3", "band1"];
 
 document.addEventListener("DOMContentLoaded", init);
 
