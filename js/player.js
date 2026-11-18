@@ -8,6 +8,14 @@ export class SynthController {
 
     this.physicalPresses = new Array(128).fill(0);
     this.isHeld = new Array(128).fill(false);
+
+    // K6: Je Taste eine Haltestimme (Platz „halte“, auch für gewöhnlich gespielte Töne) und eine
+    // Spielstimme (Platz „spiel“) beim erneuten Drücken einer gehaltenen Taste. `spielMode`: der
+    // laufende Druck gehört zur Spielstimme. `halteOn`/`spielOn`: die Stimme ist angeschlagen
+    // und noch nicht losgelassen.
+    this.spielMode = new Array(128).fill(false);
+    this.halteOn = new Array(128).fill(false);
+    this.spielOn = new Array(128).fill(false);
     this.sustainEnabled = false;
 
     // Pedal (W4.2, Sustain-Button gedrückt): Solange es getreten ist, klingen die Töne in
@@ -57,7 +65,16 @@ export class SynthController {
 
     let changed = false;
     for (const midi of notes) {
-      if (result === "hold") this.isHeld[midi] = true;
+      if (result === "hold") {
+        this.isHeld[midi] = true;
+        // Regel 7: Die gehaltene Spielstimme wird die neue Haltestimme, die bisherige klingt aus.
+        if (this.spielOn[midi]) {
+          this.audioEngine.promoteSpiel(midi);
+          this.halteOn[midi] = true;
+          this.spielOn[midi] = false;
+          this.spielMode[midi] = false;
+        }
+      }
       if (this.evaluateNoteStateInternal(midi)) changed = true;
       this.updateKeyboardVisuals(midi);
     }
@@ -84,55 +101,88 @@ export class SynthController {
 
   handlePointerEvent(type, midi) {
     if (type === "down") {
+      let trigger;
       if (this.pedalActive) {
         // Bei getretenem Pedal zählt jeder Anschlag als gedrückte Taste, auch wenn Sustain an ist.
         this.physicalPresses[midi]++;
         this.pedalNotes.add(midi);
         this.pedalUsed = true;
+        trigger = this.startsSpiel(midi);                    // Regel 5
       } else if (this.sustainEnabled) {
-        this.isHeld[midi] = !this.isHeld[midi];
+        this.isHeld[midi] = !this.isHeld[midi];              // Regel 6: keine Spielstimme
+        trigger = this.isHeld[midi] ? "halte" : null;
       } else {
         this.physicalPresses[midi]++;
+        trigger = this.startsSpiel(midi);                    // Regeln 1 und 2
       }
-      this.evaluateNoteState(midi, true);
+      this.evaluateNoteState(midi, trigger);
       this.updateKeyboardVisuals(midi);
     } else if (type === "up") {
       if (this.pedalActive) this.pedalUsed = true;
       if (this.physicalPresses[midi] > 0) {
         this.physicalPresses[midi]--;
       }
-      this.evaluateNoteState(midi, false);
+      this.evaluateNoteState(midi);
       this.updateKeyboardVisuals(midi);
     }
   }
 
-  evaluateNoteState(midi, forceTrigger = false) {
-    if (this.evaluateNoteStateInternal(midi, forceTrigger)) {
+  // Ein Druck auf eine gehaltene Taste, oder während eine Spielstimme läuft, gehört zur Spielstimme.
+  startsSpiel(midi) {
+    if (this.isHeld[midi] || this.spielMode[midi]) {
+      this.spielMode[midi] = true;
+      return "spiel";
+    }
+    return "halte";
+  }
+
+  evaluateNoteState(midi, trigger = null) {
+    if (this.evaluateNoteStateInternal(midi, trigger)) {
       this.onNotesChanged();
     }
   }
 
-  evaluateNoteStateInternal(midi, forceTrigger = false) {
-    let changed = false;
-    const shouldSound = this.physicalPresses[midi] > 0 || this.isHeld[midi] || this.pedalNotes.has(midi);
+  // Bringt die Stimmen der Taste in den Soll-Zustand. `trigger`: dieser Platz wird (neu) angeschlagen.
+  // Die Spielstimme klingt, solange die Taste gedrückt oder (bei getretenem Pedal) Pedal-Ton ist;
+  // die Haltestimme, solange die Taste gehalten ist oder ohne Spielstimme gedrückt/Pedal-Ton ist.
+  evaluateNoteStateInternal(midi, trigger = null) {
+    const pressed = this.physicalPresses[midi] > 0 || this.pedalNotes.has(midi);
+    if (!pressed) this.spielMode[midi] = false;
+    const wantSpiel = this.spielMode[midi];
+    const wantHalte = this.isHeld[midi] || (!wantSpiel && pressed);
+    const wasActive = this.activeNotes.has(midi);
+    const nowActive = wantHalte || wantSpiel;
 
-
-    if (shouldSound) {
-      if (!this.activeNotes.has(midi) || forceTrigger) {
-        this.activeNotes.add(midi);
-        // Erst melden, dann anschlagen: Die Grundton-Automatik legt so den Grundton fest,
-        // bevor die Frequenz des neuen Tons berechnet wird. Deshalb hier kein `changed`,
-        // sonst würde der Aufrufer ein zweites Mal melden.
-        this.onNotesChanged();
-        this.audioEngine.noteOn(midi, this.frequencyOf(midi));
-      }
-    } else if (this.activeNotes.has(midi)) {
-      this.activeNotes.delete(midi);
-      this.audioEngine.noteOff(midi);
-      changed = true;
+    if (nowActive && (!wasActive || trigger)) {
+      this.activeNotes.add(midi);
+      // Erst melden, dann anschlagen: Die Grundton-Automatik legt so den Grundton fest,
+      // bevor die Frequenz des neuen Tons berechnet wird. Deshalb hier kein `changed`,
+      // sonst würde der Aufrufer ein zweites Mal melden.
+      this.onNotesChanged();
     }
-    
-    return changed;
+
+    if (!wantSpiel && this.spielOn[midi]) {
+      this.audioEngine.noteOff(midi, "spiel");
+      this.spielOn[midi] = false;
+    }
+    if (!wantHalte && this.halteOn[midi]) {
+      this.audioEngine.noteOff(midi, "halte");
+      this.halteOn[midi] = false;
+    }
+    if (wantHalte && (!this.halteOn[midi] || trigger === "halte")) {
+      this.audioEngine.noteOn(midi, this.frequencyOf(midi), "halte");
+      this.halteOn[midi] = true;
+    }
+    if (wantSpiel && (!this.spielOn[midi] || trigger === "spiel")) {
+      this.audioEngine.noteOn(midi, this.frequencyOf(midi), "spiel");
+      this.spielOn[midi] = true;
+    }
+
+    if (!nowActive && wasActive) {
+      this.activeNotes.delete(midi);
+      return true;
+    }
+    return false;
   }
 
   updateKeyboardVisuals(midi) {

@@ -12,9 +12,12 @@ function createSynth() {
     setHeldState: (midi, value) => held.set(midi, value),
     setActiveState: (midi, value) => active.set(midi, value)
   };
+  // Der Platz wird nur vermerkt, wenn es die Spielstimme ist (K6).
   const audioEngine = {
-    noteOn: (midi, frequency) => log.push(["noteOn", midi, frequency]),
-    noteOff: midi => log.push(["noteOff", midi])
+    noteOn: (midi, frequency, platz = "halte") =>
+      log.push(platz === "halte" ? ["noteOn", midi, frequency] : ["noteOn", midi, frequency, platz]),
+    noteOff: (midi, platz = "halte") => log.push(platz === "halte" ? ["noteOff", midi] : ["noteOff", midi, platz]),
+    promoteSpiel: midi => log.push(["promoteSpiel", midi])
   };
   const synth = new SynthController(keyboard, audioEngine, midi => midi * 10);
   return { synth, log, held, active };
@@ -239,6 +242,122 @@ test("Pedal meldet Tonänderungen beim Loslassen genau einmal", () => {
   synth.onNotesChanged = () => notifications++;
   synth.pedalUp();
   assert.equal(notifications, 1);
+});
+
+// --- Mehrere Stimmen je Taste (K6) ---
+
+// Hält Taste 60 per Sustain-Tipp und schaltet Sustain wieder aus; das Protokoll beginnt danach leer.
+function heldSynth() {
+  const created = createSynth();
+  created.synth.setSustainEnabled(true);
+  created.synth.handlePointerEvent("down", 60);
+  created.synth.handlePointerEvent("up", 60);
+  created.synth.setSustainEnabled(false);
+  created.log.length = 0;
+  return created;
+}
+
+test("K6 Regel 1: gehaltene Taste erneut drücken bringt eine Spielstimme, die beim Loslassen endet", () => {
+  const { synth, log } = heldSynth();
+  synth.handlePointerEvent("down", 60);
+  assert.deepEqual(log, [["noteOn", 60, 600, "spiel"]]);
+  synth.handlePointerEvent("up", 60);
+  assert.deepEqual(log, [["noteOn", 60, 600, "spiel"], ["noteOff", 60, "spiel"]]);
+  assert.deepEqual([...synth.activeNotes], [60]);
+});
+
+test("K6 Regel 2: erneutes Drücken schlägt die Spielstimme neu an, auch mit zweitem Finger", () => {
+  const { synth, log } = heldSynth();
+  synth.handlePointerEvent("down", 60);
+  synth.handlePointerEvent("up", 60);
+  synth.handlePointerEvent("down", 60);
+  synth.handlePointerEvent("down", 60);
+  assert.deepEqual(log, [
+    ["noteOn", 60, 600, "spiel"], ["noteOff", 60, "spiel"],
+    ["noteOn", 60, 600, "spiel"], ["noteOn", 60, 600, "spiel"]
+  ]);
+});
+
+test("K6 Regel 3: Release beendet nur die Haltestimme, die Spielstimme klingt bis zum Loslassen", () => {
+  const { synth, log } = heldSynth();
+  synth.handlePointerEvent("down", 60);
+  synth.releaseAllHeldKeys();
+  assert.deepEqual(log.at(-1), ["noteOff", 60]);
+  assert.deepEqual([...synth.activeNotes], [60]);
+
+  synth.handlePointerEvent("down", 60);           // zweiter Finger: Spielstimme neu angeschlagen
+  assert.deepEqual(log.at(-1), ["noteOn", 60, 600, "spiel"]);
+  synth.handlePointerEvent("up", 60);
+  synth.handlePointerEvent("up", 60);
+  assert.deepEqual(log.at(-1), ["noteOff", 60, "spiel"]);
+  assert.deepEqual([...synth.activeNotes], []);
+
+  synth.handlePointerEvent("down", 60);           // danach wieder ein gewöhnlicher Ton
+  assert.deepEqual(log.at(-1), ["noteOn", 60, 600]);
+});
+
+test("K6 Regel 5: Pedal und Druck auf gehaltene Taste – Spielstimme bis Pedal-Loslassen, Haltestimme bleibt", () => {
+  const { synth, log } = heldSynth();
+  synth.pedalDown();
+  synth.handlePointerEvent("down", 60);
+  synth.handlePointerEvent("up", 60);
+  assert.deepEqual(log, [["noteOn", 60, 600, "spiel"]]);
+  assert.equal(synth.pedalUp(), "pedal");
+  assert.deepEqual(log, [["noteOn", 60, 600, "spiel"], ["noteOff", 60, "spiel"]]);
+  assert.equal(synth.isHeld[60], true);
+});
+
+test("K6 Regel 5: Pedal zuerst losgelassen – Spielstimme bis Tasten-Loslassen", () => {
+  const { synth, log } = heldSynth();
+  synth.pedalDown();
+  synth.handlePointerEvent("down", 60);
+  synth.pedalUp();
+  assert.deepEqual(log, [["noteOn", 60, 600, "spiel"]]);
+  synth.handlePointerEvent("up", 60);
+  assert.deepEqual(log, [["noteOn", 60, 600, "spiel"], ["noteOff", 60, "spiel"]]);
+});
+
+test("K6 Regel 6: Sustain an, Druck auf gehaltene Taste beendet die Haltestimme, keine Spielstimme", () => {
+  const { synth, log } = heldSynth();
+  synth.setSustainEnabled(true);
+  synth.handlePointerEvent("down", 60);
+  synth.handlePointerEvent("up", 60);
+  assert.deepEqual(log, [["noteOff", 60]]);
+  assert.deepEqual([...synth.activeNotes], []);
+});
+
+test("K6 Regel 7: Sustain-Tipp hält die Spielstimme; sie wird Haltestimme, die bisherige klingt aus", () => {
+  const { synth, log } = heldSynth();
+  synth.handlePointerEvent("down", 60);
+  synth.pedalDown();
+  assert.equal(synth.pedalUp(), "hold");
+  assert.deepEqual(log, [["noteOn", 60, 600, "spiel"], ["promoteSpiel", 60]]);
+
+  synth.handlePointerEvent("up", 60);
+  assert.equal(log.length, 2);                    // klingt als Haltestimme weiter
+  synth.releaseAllHeldKeys();
+  assert.deepEqual(log.at(-1), ["noteOff", 60]);
+  assert.deepEqual([...synth.activeNotes], []);
+});
+
+test("K6 Regel 7 nach Release: die Spielstimme wird wieder Haltestimme", () => {
+  const { synth, log } = heldSynth();
+  synth.handlePointerEvent("down", 60);
+  synth.releaseAllHeldKeys();
+  synth.pedalDown();
+  assert.equal(synth.pedalUp(), "hold");
+  synth.handlePointerEvent("up", 60);
+  assert.deepEqual(log, [["noteOn", 60, 600, "spiel"], ["noteOff", 60], ["promoteSpiel", 60]]);
+  assert.deepEqual([...synth.activeNotes], [60]);
+});
+
+test("K6: Spielstimme beginnen und beenden ändert die klingenden Töne nicht", () => {
+  const { synth } = heldSynth();
+  const reports = [];
+  synth.onNotesChanged = () => reports.push([...synth.activeNotes]);
+  synth.handlePointerEvent("down", 60);
+  synth.handlePointerEvent("up", 60);
+  assert.ok(reports.every(notes => notes.length === 1 && notes[0] === 60));
 });
 
 // --- connectAutoRoot ---

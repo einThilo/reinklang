@@ -267,6 +267,15 @@ export class AudioEngine {
     this.schedule(() => this.finishVoice(voice), (remaining + 0.05) * 1000);
   }
 
+  // Regel 7 (K6): Die Spielstimme wird die Haltestimme; die bisherige Haltestimme klingt aus.
+  promoteSpiel(midi) {
+    const slots = this.voices.get(midi);
+    if (!slots?.spiel) return;
+    this.noteOff(midi, "halte");
+    slots.halte = slots.spiel;
+    slots.spiel = undefined;
+  }
+
   // Beendet eine ausgeklungene Stimme. Wurde sie inzwischen neu angeschlagen, bleibt sie. Ist der
   // Ausklang noch nicht vorbei (erneut losgelassen, oder die Klangzeit läuft nach), wird später geprüft.
   finishVoice(voice) {

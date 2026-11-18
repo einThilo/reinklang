@@ -185,6 +185,26 @@ test("Haltestimme und Spielstimme einer Taste sind getrennt", () => {
   assert.equal(engine.voiceAt(60, "halte"), halte);
 });
 
+test("promoteSpiel: die Spielstimme wird Haltestimme, die bisherige Haltestimme klingt aus (K6 Regel 7)", () => {
+  const engine = makeEngine();
+  engine.noteOn(60, 261, "halte");
+  engine.noteOn(60, 261, "spiel");
+  const halte = engine.voiceAt(60, "halte");
+  const spiel = engine.voiceAt(60, "spiel");
+
+  engine.ctx.currentTime = 1;
+  engine.promoteSpiel(60);
+  assert.equal(engine.voiceAt(60, "halte"), spiel);
+  assert.equal(engine.voiceAt(60, "spiel"), undefined);
+  assert.equal(halte.releaseEnd, 1 + INSTRUMENTS.piano.releaseTime);
+
+  engine.ctx.currentTime = 3;
+  engine.run();
+  assert.notEqual(halte.osc.stopped, null);
+  assert.equal(spiel.osc.stopped, null);
+  assert.equal(engine.voiceAt(60, "halte"), spiel);
+});
+
 test("Umstimmen erfasst klingende Stimmen beider Plätze", () => {
   const engine = makeEngine();
   engine.noteOn(60, 261, "halte");
