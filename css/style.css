@@ -246,8 +246,8 @@ button {
 }
 
 .key.black {
-  /* Anteil an der Klaviaturhöhe; eine Layout-Variante setzt --black-key-height an der Klaviatur. */
-  height: var(--black-key-height, 60%);
+  /* Anteil an der Klaviaturhöhe, in allen Layouts gleich (L9). */
+  height: 45%;
   background: linear-gradient(to bottom, #333 0%, #000 100%);
   border-radius: 0 0 6px 6px;
   z-index: 2;
@@ -280,11 +280,6 @@ button {
    ============================================================ */
 
 /* --- Gemeinsam für alle Varianten (jede Klasse layout-…) --- */
-
-/* Hauptklaviatur niedriger: schwarze Tasten ein Drittel kürzer, weißer Bereich darunter wie zuvor. */
-body[class*="layout-"] #keyboard {
-  --black-key-height: 50%;
-}
 
 /* Instrument und Stimmung: der Button füllt das Feld. */
 body[class*="layout-"] .sound-control-group {
@@ -406,11 +401,6 @@ body.layout-klassisch-2 #app {
     "keyboard keyboard   keyboard keyboard   keyboard   keyboard";
 }
 
-/* Schwarze Tasten so lang wie in der Vorgabe (die Klaviatur ist hier nicht niedriger). */
-body.layout-klassisch-2 #keyboard {
-  --black-key-height: 60%;
-}
-
 /* Tastenbereich: drei Zeilen << < | > >> | - +. */
 body.layout-klassisch-2 #keyboard-tools {
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -450,11 +440,6 @@ body.layout-band-gruppe #app {
 
 :is(body.layout-block1, body.layout-block2, body.layout-block3, body.layout-band1) :is(#pitch, .step-control, #transpose, #keyboard-tools) {
   display: contents;
-}
-
-/* Hauptklaviatur: schwarze Tasten 40 % hoch. */
-:is(body.layout-block1, body.layout-block2, body.layout-block3, body.layout-band1) #keyboard {
-  --black-key-height: 40%;
 }
 
 /* Einzelteile füllen ihre Zelle. */
