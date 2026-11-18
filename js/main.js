@@ -12,7 +12,9 @@ import { keepScreenAwake } from "./wakelock.js";
 const options = readOptions(location.search);
 
 // Layout-Varianten: ?layout=<name> setzt die Klasse layout-<name> am <body>
-// (Regeln dazu in css/style.css). Ohne Zusatz oder bei unbekanntem Namen gilt die Vorgabe.
+// (Regeln dazu in css/style.css). Ohne Zusatz oder bei unbekanntem Namen gilt DEFAULT_LAYOUT;
+// ?layout=alt zeigt die frühere Vorgabe (keine Layout-Klasse).
+const DEFAULT_LAYOUT = "band1";
 const LAYOUTS = ["band", "band-unten", "ecke", "ecken", "klassisch-2", "band-gruppe", "block1", "block2", "block3", "band1"];
 
 document.addEventListener("DOMContentLoaded", init);
@@ -441,9 +443,9 @@ function setupDeviation(harmonyKeyboard) {
 // Layout-Variante aus der Adresse.
 function setupLayout() {
   const name = new URLSearchParams(location.search).get("layout");
-  if (LAYOUTS.includes(name)) {
-    document.body.classList.add(`layout-${name}`);
-  }
+  if (name === "alt") return;
+  const chosen = LAYOUTS.includes(name) ? name : DEFAULT_LAYOUT;
+  document.body.classList.add(`layout-${chosen}`);
 }
 
 // Fullscreen-Button.
