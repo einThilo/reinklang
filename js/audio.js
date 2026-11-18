@@ -98,6 +98,12 @@ function anchorGain(voice, current, t) {
 // Plätze je Taste (K6): die Haltestimme und eine zusätzliche Spielstimme.
 export const PLAETZE = ["halte", "spiel"];
 
+// Z13: Unter iOS schaltet der Stummschalter Web Audio sonst stumm; „playback“ gilt wie bei Musik-Apps.
+// Ab iOS 17; Browser ohne `navigator.audioSession` überspringen das. Vor dem AudioContext setzen.
+export function preferPlayback(nav = globalThis.navigator) {
+  if (nav?.audioSession) nav.audioSession.type = "playback";
+}
+
 export class AudioEngine {
   constructor(instrumentKey) {
     this.ctx = null;
@@ -117,6 +123,7 @@ export class AudioEngine {
 
   ensureStarted() {
     if (!this.ctx) {
+      preferPlayback();
       const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
       this.ctx = new AudioContextCtor();
 

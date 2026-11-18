@@ -43,8 +43,16 @@ class FakeAudioContext {
 }
 globalThis.window = { AudioContext: FakeAudioContext };
 
-const { AudioEngine, harmonicAmplitudes } = await import("../js/audio.js");
+const { AudioEngine, harmonicAmplitudes, preferPlayback } = await import("../js/audio.js");
 const { INSTRUMENTS } = await import("../js/instruments.js");
+
+test("preferPlayback: setzt die Audio-Sitzung auf playback, wo es sie gibt (Z13)", () => {
+  const nav = { audioSession: { type: "auto" } };
+  preferPlayback(nav);
+  assert.equal(nav.audioSession.type, "playback");
+  assert.doesNotThrow(() => preferPlayback({}));
+  assert.doesNotThrow(() => preferPlayback(undefined));
+});
 
 test("harmonicAmplitudes: Teiltöne über der halben Abtastrate entfallen", () => {
   const amplitudes = harmonicAmplitudes(INSTRUMENTS.piano, 5000, 24000);
