@@ -18,7 +18,7 @@ const options = readOptions(location.search);
 // (Regeln dazu in css/style.css). Ohne Zusatz oder bei unbekanntem Namen gilt DEFAULT_LAYOUT;
 // ?layout=alt zeigt die frühere Vorgabe (keine Layout-Klasse).
 const DEFAULT_LAYOUT = "band1";
-const LAYOUTS = ["band", "band-unten", "ecke", "ecken", "klassisch-2", "band-gruppe", "block1", "block2", "block3", "band1"];
+const LAYOUTS = ["band", "band-unten", "ecke", "ecken", "klassisch-2", "band-gruppe", "block1", "block2", "block3", "band1", "block4"];
 
 document.addEventListener("DOMContentLoaded", init);
 

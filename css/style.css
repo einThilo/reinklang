@@ -439,17 +439,17 @@ body.layout-band-gruppe #app {
 }
 
 /* ============================================================
-   Wunsch-Layouts aus dem Werkzeug (L1.3): block1, block2, block3, band1.
+   Wunsch-Layouts aus dem Werkzeug (L1.3, L1.5): block1, block2, block3, band1, block4.
    Kanten aus werkzeug/Vorschlaege.md, näher als 2 % zu einer Linie verschmolzen; gleichartige Tasten
    gleich groß. Stimmton, Transposition und Tastenbereich lösen sich auf, jeder Teil liegt einzeln im Grid.
    ============================================================ */
 
-:is(body.layout-block1, body.layout-block2, body.layout-block3, body.layout-band1) :is(#pitch, .step-control, #transpose, #keyboard-tools) {
+:is(body.layout-block1, body.layout-block2, body.layout-block3, body.layout-band1, body.layout-block4) :is(#pitch, .step-control, #transpose, #keyboard-tools) {
   display: contents;
 }
 
 /* Einzelteile füllen ihre Zelle. */
-:is(body.layout-block1, body.layout-block2, body.layout-block3, body.layout-band1) :is(#tone-input, .step-control button, .tone-btn, .transpose-label, #keyboard-tools button) {
+:is(body.layout-block1, body.layout-block2, body.layout-block3, body.layout-band1, body.layout-block4) :is(#tone-input, .step-control button, .tone-btn, .transpose-label, #keyboard-tools button) {
   width: 100%;
   height: 100%;
   min-width: 0;
@@ -458,7 +458,7 @@ body.layout-band-gruppe #app {
   box-sizing: border-box;
 }
 
-:is(body.layout-block1, body.layout-block2, body.layout-block3, body.layout-band1) .transpose-label {
+:is(body.layout-block1, body.layout-block2, body.layout-block3, body.layout-band1, body.layout-block4) .transpose-label {
   background: #eee;
 }
 
@@ -565,6 +565,32 @@ body.layout-band1 #keyboard-tools [data-action="octDown"] { grid-area: 3 / 9 / 4
 body.layout-band1 #keyboard-tools [data-action="octUp"] { grid-area: 3 / 11 / 4 / 12; }
 body.layout-band1 #keyboard-tools [data-action="semiDown"] { grid-area: 4 / 9 / 5 / 11; }
 body.layout-band1 #keyboard-tools [data-action="semiUp"] { grid-area: 4 / 11 / 5 / 12; }
+
+/* --- Variante "block4" (L1.5): Release/Sustain am linken Rand, Stimmung und Instrument über der Harmonieklaviatur, rechts Tastenbereich, Transposition, Stimmton als Spalten, Fullscreen oben rechts. --- */
+body.layout-block4 #app {
+  grid-template-columns: minmax(0, 10fr) minmax(0, 27fr) minmax(0, 27fr) minmax(0, 9fr) minmax(0, 9fr) minmax(0, 9fr) minmax(0, 9fr);
+  grid-template-rows: minmax(0, 10fr) minmax(0, 5.33fr) minmax(0, 8.67fr) minmax(0, 6.67fr) minmax(0, 15.33fr) minmax(0, 54fr);
+  grid-template-areas: none;
+}
+body.layout-block4 #keyboard { grid-area: 6 / 1 / 7 / 8; }
+body.layout-block4 #btn-release { grid-area: 1 / 1 / 4 / 2; }
+body.layout-block4 #btn-sustain { grid-area: 4 / 1 / 6 / 2; }
+body.layout-block4 #tuning { grid-area: 1 / 2 / 2 / 3; }
+body.layout-block4 #instrument { grid-area: 1 / 3 / 2 / 4; }
+body.layout-block4 #harmony-keyboard { grid-area: 2 / 2 / 6 / 4; }
+body.layout-block4 #keyboard-tools [data-action="decKeys"] { grid-area: 1 / 4 / 3 / 5; }
+body.layout-block4 #keyboard-tools [data-action="incKeys"] { grid-area: 1 / 5 / 3 / 6; }
+body.layout-block4 #keyboard-tools [data-action="octDown"] { grid-area: 3 / 4 / 5 / 5; }
+body.layout-block4 #keyboard-tools [data-action="octUp"] { grid-area: 3 / 5 / 5 / 6; }
+body.layout-block4 #keyboard-tools [data-action="semiDown"] { grid-area: 5 / 4 / 6 / 5; }
+body.layout-block4 #keyboard-tools [data-action="semiUp"] { grid-area: 5 / 5 / 6 / 6; }
+body.layout-block4 #fullscreen-toggle { grid-area: 1 / 6 / 2 / 8; }
+body.layout-block4 #btn-trans-up { grid-area: 2 / 6 / 4 / 7; }
+body.layout-block4 .transpose-label { grid-area: 4 / 6 / 5 / 7; }
+body.layout-block4 #btn-trans-down { grid-area: 5 / 6 / 6 / 7; }
+body.layout-block4 #btn-pitch-up { grid-area: 2 / 7 / 4 / 8; }
+body.layout-block4 #tone-input { grid-area: 4 / 7 / 5 / 8; }
+body.layout-block4 #btn-pitch-down { grid-area: 5 / 7 / 6 / 8; }
 
 /* ============================================================
    Startfläche, Häuser-Form und Abweichungsanzeige (früher Prototypen).
