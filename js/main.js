@@ -141,11 +141,17 @@ function setupKeyboardRange(mainKeyboard) {
     }
   }
 
+  // Z19: Tastenanzahl und Halbtonschritte wiederholen beim Halten, die Oktave nicht.
   document.querySelectorAll("#keyboard-tools button").forEach(btn => {
-    btn.addEventListener("pointerdown", event => {
-      event.preventDefault();
-      handleRangeAction(btn.dataset.action);
-    });
+    const action = () => handleRangeAction(btn.dataset.action);
+    if (btn.dataset.action.startsWith("oct")) {
+      btn.addEventListener("pointerdown", event => {
+        event.preventDefault();
+        action();
+      });
+    } else {
+      addRepeatOnHold(btn, action, SLOW_REPEAT_MS);
+    }
   });
 
   onStateChange(["keyboardStartMidi", "keyboardKeyCount"], () => {
@@ -339,8 +345,13 @@ function setupPitch() {
   updatePitchInput();
 }
 
-// Ruft `action` beim Drücken sofort auf und wiederholt sie, solange der Button gedrückt bleibt.
-function addRepeatOnHold(button, action) {
+// Abstand der Wiederholungen beim Halten: Stimmton schnell (W2), Klaviatur und Transposition langsamer (Z19).
+const FAST_REPEAT_MS = 60;
+const SLOW_REPEAT_MS = 150;
+
+// Ruft `action` beim Drücken sofort auf und wiederholt sie nach 0,4 s alle `intervalMs`,
+// solange der Button gedrückt bleibt.
+function addRepeatOnHold(button, action, intervalMs = FAST_REPEAT_MS) {
   let delayTimer = null;
   let repeatTimer = null;
   const stop = () => {
@@ -351,7 +362,7 @@ function addRepeatOnHold(button, action) {
     event.preventDefault();
     stop();
     action();
-    delayTimer = setTimeout(() => { repeatTimer = setInterval(action, 60); }, 400);
+    delayTimer = setTimeout(() => { repeatTimer = setInterval(action, intervalMs); }, 400);
   });
   ["pointerup", "pointercancel", "pointerleave"].forEach(type => button.addEventListener(type, stop));
 }
@@ -383,15 +394,8 @@ function setupTranspose(mainKeyboard, harmonyKeyboard, updateRootHighlight) {
     updateRootHighlight();
   }
 
-  btnTransDown.addEventListener("pointerdown", event => {
-    event.preventDefault();
-    transposeBy(-1);
-  });
-
-  btnTransUp.addEventListener("pointerdown", event => {
-    event.preventDefault();
-    transposeBy(1);
-  });
+  addRepeatOnHold(btnTransDown, () => transposeBy(-1), SLOW_REPEAT_MS);
+  addRepeatOnHold(btnTransUp, () => transposeBy(1), SLOW_REPEAT_MS);
 
   onStateChange(["transpose"], applyTranspose);
   updateTransposeDisplay();
