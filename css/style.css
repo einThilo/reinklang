@@ -670,8 +670,7 @@ body.layout-band1 #keyboard-tools [data-action="semiUp"] { grid-area: 4 / 11 / 5
 .deviation-value {
   position: absolute;
   bottom: 4px;
-  left: 50%;
-  transform: translateX(-50%);
+  /* Lage (left, transform) setzt main.js je nach Abweichung (Z18). */
   padding: 0 1px;
   font-size: 10px;
   font-weight: bold;

@@ -421,17 +421,22 @@ function setupDeviation(harmonyKeyboard) {
       if (!state.useTuning) continue;
 
       const cents = centsFromEqual(midi, state);
+      const position = deviationPosition(cents);
       const box = document.createElement("div");
       box.className = "deviation";
       const marker = document.createElement("div");
       marker.className = "deviation-marker";
-      marker.style.left = deviationPosition(cents) + "%";
+      marker.style.left = position + "%";
+      // Z18: Die Zahl gleitet mit der Linie, bleibt aber in der Taste: bei 0 Cent mittig,
+      // an den Rändern bündig, dazwischen anteilig.
       const value = document.createElement("div");
       value.className = "deviation-value";
       value.textContent = formatCents(cents);
+      value.style.left = position + "%";
+      value.style.transform = `translateX(-${position}%)`;
 
-      marker.appendChild(value);
       box.appendChild(marker);
+      box.appendChild(value);
       keyElement.appendChild(box);
     }
   }
