@@ -8,6 +8,7 @@ import { state, setState, setStates, onStateChange, LIMITS } from "./state.js";
 import { readOptions } from "./options.js";
 import { keepScreenAwake } from "./wakelock.js";
 import { isInstalledApp } from "./installed.js";
+import { createStepRun } from "./steps.js";
 
 // Schalter für Prototypen (?name=wert), siehe options.js.
 const options = readOptions(location.search);
@@ -113,12 +114,18 @@ function harmonyStart() {
 // Tastenbereich der Hauptklaviatur: unterster Ton und Tastenanzahl.
 function setupKeyboardRange(mainKeyboard) {
   // Verschiebt den untersten Ton nur so weit, dass die bisherige Tastenanzahl noch passt
-  // (die übrigen Grenzen setzt `state.js`).
+  // (die übrigen Grenzen setzt `state.js`). Gibt zurück, ob er sich bewegt hat.
   function moveKeyboardStart(delta) {
-    setState("keyboardStartMidi", Math.min(state.keyboardStartMidi + delta, 128 - state.keyboardKeyCount));
+    const before = state.keyboardStartMidi;
+    setState("keyboardStartMidi", Math.min(before + delta, 128 - state.keyboardKeyCount));
+    return state.keyboardStartMidi !== before;
   }
 
+  // Z19.1: Die Oktave läuft als 12 Halbtonschritte, damit das Verschieben sichtbar wird.
+  const octaveRun = createStepRun({ step: moveKeyboardStart, intervalMs: 25 });
+
   function handleRangeAction(action) {
+    if (action === "semiDown" || action === "semiUp") octaveRun.stop();
     switch (action) {
       case "decKeys":
         setState("keyboardKeyCount", state.keyboardKeyCount - 1);
@@ -127,7 +134,7 @@ function setupKeyboardRange(mainKeyboard) {
         setState("keyboardKeyCount", state.keyboardKeyCount + 1);
         break;
       case "octDown":
-        moveKeyboardStart(-12);
+        octaveRun.start(-1, 12);
         break;
       case "semiDown":
         moveKeyboardStart(-1);
@@ -136,7 +143,7 @@ function setupKeyboardRange(mainKeyboard) {
         moveKeyboardStart(1);
         break;
       case "octUp":
-        moveKeyboardStart(12);
+        octaveRun.start(1, 12);
         break;
     }
   }

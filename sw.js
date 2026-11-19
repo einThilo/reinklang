@@ -21,6 +21,7 @@ const FILES = [
   "js/options.js",
   "js/player.js",
   "js/state.js",
+  "js/steps.js",
   "js/tuning.js",
   "js/wakelock.js",
   "icons/apple-touch-icon.png",
