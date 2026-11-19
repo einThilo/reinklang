@@ -465,12 +465,27 @@ function setupFullscreen() {
   const fullscreenButton = document.getElementById("fullscreen-toggle");
 
   // Z7: Als installierte App läuft die Seite schon im Vollbild (aus dem Manifest, nicht beendbar).
-  // Z15 (Test): Dort steht stattdessen ✕ und schließt die App, soweit der Browser das erlaubt.
+  // Z15: Dort steht stattdessen ✕ und schließt die App (Android erlaubt das).
+  // Z15.1: zweistufig: erster Tipp macht das ✕ rot und dick, erst der zweite schließt. Jeder Druck
+  // woanders setzt zurück und behält seine normale Wirkung.
   if (isInstalledApp()) {
-    fullscreenButton.textContent = "✕";
-    fullscreenButton.title = "Schließen";
+    let armed = false;
+    function setArmed(value) {
+      armed = value;
+      fullscreenButton.textContent = armed ? "✖" : "✕";
+      fullscreenButton.title = armed ? "Nochmal tippen zum Schließen" : "Schließen";
+      fullscreenButton.classList.toggle("armed", armed);
+    }
+    // In der Einfangphase, damit Tasten, die das Ereignis selbst abfangen, trotzdem zurücksetzen.
+    document.addEventListener("pointerdown", event => {
+      if (armed && !fullscreenButton.contains(event.target)) setArmed(false);
+    }, true);
     fullscreenButton.addEventListener("pointerdown", event => event.preventDefault());
-    fullscreenButton.addEventListener("pointerup", () => window.close());
+    fullscreenButton.addEventListener("pointerup", () => {
+      if (armed) window.close();
+      else setArmed(true);
+    });
+    setArmed(false);
     return;
   }
 
