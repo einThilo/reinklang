@@ -587,6 +587,16 @@ body.layout-band1 #keyboard-tools [data-action="semiUp"] { grid-area: 4 / 11 / 5
   touch-action: none;
 }
 
+/* Versionsnummer (Z20) klein unten links auf der Startfläche. */
+#start-version {
+  position: absolute;
+  left: 8px;
+  bottom: 6px;
+  font-size: 12px;
+  font-weight: normal;
+  opacity: 0.6;
+}
+
 /* Grundton-Tasten als „Häuser“ (L6.1, L7). Alle Häuser sind gleich hoch (61 % der Höhe), eine weiße
    Taste breit und gleich gefärbt; Lage und Breite setzt harmony.js. Untere Häuser (weiße Tasten):
    flache Unterkante, senkrechte Seiten, Dach von 63 % bis zur Spitze bei 39 % der Höhe. Obere Häuser

@@ -9,6 +9,7 @@ import { readOptions } from "./options.js";
 import { keepScreenAwake } from "./wakelock.js";
 import { isInstalledApp } from "./installed.js";
 import { createStepRun } from "./steps.js";
+import { VERSION } from "./version.js";
 
 // Schalter für Prototypen (?name=wert), siehe options.js.
 const options = readOptions(location.search);
@@ -414,6 +415,10 @@ function setupStartOverlay(audioEngine) {
   const overlay = document.createElement("div");
   overlay.id = "start-overlay";
   overlay.textContent = "Tippen zum Starten";
+  const version = document.createElement("span");
+  version.id = "start-version";
+  version.textContent = VERSION;
+  overlay.appendChild(version);
   overlay.addEventListener("pointerdown", event => event.preventDefault());
   overlay.addEventListener("pointerup", () => {
     audioEngine.ensureStarted();
