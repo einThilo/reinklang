@@ -464,10 +464,13 @@ function setupFullscreen() {
   const appRoot = document.getElementById("app");
   const fullscreenButton = document.getElementById("fullscreen-toggle");
 
-  // Z7: Als installierte App läuft die Seite schon im Vollbild; der Knopf entfällt, sein Platz bleibt
-  // vorerst leer (Z15).
+  // Z7: Als installierte App läuft die Seite schon im Vollbild (aus dem Manifest, nicht beendbar).
+  // Z15 (Test): Dort steht stattdessen ✕ und schließt die App, soweit der Browser das erlaubt.
   if (isInstalledApp()) {
-    fullscreenButton.hidden = true;
+    fullscreenButton.textContent = "✕";
+    fullscreenButton.title = "Schließen";
+    fullscreenButton.addEventListener("pointerdown", event => event.preventDefault());
+    fullscreenButton.addEventListener("pointerup", () => window.close());
     return;
   }
 
