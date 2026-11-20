@@ -813,3 +813,18 @@ body.layout-block4 #harmony-keyboard .key.active .deviation-value { color: #0a2d
 body.layout-block4 #harmony-keyboard .key.active .deviation-marker { background: #0a2d2d; opacity: 0.5; }
 /* Z15.1: Das zweite ✕ der installierten App bleibt rot. */
 body.layout-block4 #fullscreen-toggle.armed { color: var(--play); }
+
+/* Keine blaue Tipp-Hervorhebung des Browsers. Stattdessen leuchtet ein Knopf beim Drücken in seiner
+   Schriftfarbe auf; Sustain und Release färben sich schon beim Drücken selbst (Klasse „selected“). */
+body.layout-block4 { -webkit-tap-highlight-color: transparent; }
+body.layout-block4 :is(button, .picker-label) { position: relative; }
+body.layout-block4 :is(button, .picker-label)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--c);
+  opacity: 0;
+  pointer-events: none;
+}
+body.layout-block4 button:active::after,
+body.layout-block4 .sound-control-group:active .picker-label::after { opacity: 0.3; }
