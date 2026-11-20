@@ -725,3 +725,91 @@ body.layout-block4 #btn-pitch-down { grid-area: 5 / 7 / 6 / 8; }
   top: 4px;
   bottom: auto;
 }
+
+/* ============================================================
+   Design der Vorgabe block4 (Z12.1), aus werkzeug/design.html (Variante z1).
+   Einstellungen dunkel, Schrift in der Farbe ihrer Gruppe. Sustain grau mit Balken in der Spielfarbe,
+   eingeschaltet gefärbt; Release dunkel, Balken solange es gehaltene Töne gibt. Gehaltene Tasten in der
+   Spielfarbe, gedrückte hellgrau. Gemischte Farbtöne stehen als feste Werte da (ohne color-mix).
+   ============================================================ */
+body.layout-block4 {
+  --play: #d8443c;   /* Sustain, Release, gehaltene Tasten */
+  --st: #27b3b3;     /* Stimmung, Stimmton, Harmonieklaviatur */
+  --kb: #deddda;     /* Tastenbereich, Transposition */
+  --ins: #eaa53e;    /* Instrument */
+  --fs: #9aa0a6;     /* Vollbild */
+  --off: #d8443c;    /* Balken über „tuning off“ */
+  --house: #3a3d42;  /* Häuser der Harmonieklaviatur */
+  --surf: #222428;   /* Knöpfe */
+  --bg: #141517;     /* Hintergrund */
+}
+
+body.layout-block4 #app,
+body.layout-block4 #harmony-keyboard,
+body.layout-block4 #harmony-keyboard .keyboard { background: var(--bg); }
+
+body.layout-block4 :is(#keyboard-tools button, .tone-btn, .transpose-label) { --c: var(--kb); }
+body.layout-block4 :is(#tuning .picker-label, #pitch button, #tone-input) { --c: var(--st); }
+body.layout-block4 #instrument .picker-label { --c: var(--ins); }
+body.layout-block4 #fullscreen-toggle { --c: var(--fs); }
+
+body.layout-block4 :is(button, .picker-label, #tone-input, .transpose-label, .sustain-release-half) {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  font-family: inherit;
+  border: 0;
+  border-radius: 0;
+  outline: none;
+}
+
+body.layout-block4 :is(button, .picker-label, #tone-input, .transpose-label) {
+  background: var(--surf);
+  color: var(--c);
+  box-shadow: inset 0 0 0 1px #000;
+}
+
+body.layout-block4 #tone-input { -moz-appearance: textfield; }
+body.layout-block4 #tone-input::-webkit-inner-spin-button,
+body.layout-block4 #tone-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+body.layout-block4 #btn-sustain {
+  background: #33363b;
+  color: #ddd;
+  box-shadow: inset 0 7px 0 var(--play), inset 0 0 0 1px #000;
+}
+body.layout-block4 #btn-sustain.selected { background: #a13a34; color: #fff; }
+body.layout-block4 #btn-release { background: #1c1d20; color: #999; box-shadow: inset 0 0 0 1px #000; }
+body.layout-block4 #btn-release.has-held {
+  color: #ddd;
+  box-shadow: inset 0 7px 0 var(--play), inset 0 0 0 1px #000;
+}
+body.layout-block4 #btn-release.selected { background: #a13a34; color: #fff; }
+
+/* Hauptklaviatur: gehalten in der Spielfarbe, gedrückt neutral hellgrau. */
+body.layout-block4 #keyboard .key.held.white { background: linear-gradient(to bottom, #e47c77, #c73f37); }
+body.layout-block4 #keyboard .key.held.black { background: linear-gradient(to bottom, #ad3630, #611f1b); }
+body.layout-block4 #keyboard .key.active.white { background: linear-gradient(to bottom, #eee, #bbb); }
+body.layout-block4 #keyboard .key.active.black { background: linear-gradient(to bottom, #666, #333); }
+
+/* Harmonieklaviatur: Häuser grau, das gewählte in der Stimmungsfarbe (blass bei Automatik). */
+body.layout-block4 #harmony-keyboard .key { background: var(--house); }
+body.layout-block4 #harmony-keyboard .key.active { background: var(--st); }
+body.layout-block4 #harmony-keyboard .key.active.pale { background: #30787a; }
+body.layout-block4 #harmony-keyboard .special { background: #2c2e32; }
+body.layout-block4 #harmony-keyboard .special.selected { background: var(--st); }
+body.layout-block4 #harmony-keyboard .special[data-special="middle"] {
+  background: linear-gradient(to bottom, var(--off) 0 6px, #2c2e32 6px);
+}
+body.layout-block4 #harmony-keyboard .special[data-special="middle"] .special-label { color: #ccc; }
+
+/* Cent: Linie und Zahl entsättigt in der Stimmungsfarbe, die Zahl ohne Kasten, die Linie endet vor der Zahl.
+   Auf dem gewählten Haus (dort steht immer die 0) dunkel, sonst unlesbar. */
+body.layout-block4 .deviation-marker { width: 1px; margin-left: 0; background: #53a0a0; opacity: 0.7; }
+body.layout-block4 .deviation-value { color: #53a0a0; background: none; }
+body.layout-block4 .key.white .deviation-marker { bottom: 17px; }
+body.layout-block4 .key.black .deviation-marker { top: 17px; }
+body.layout-block4 #harmony-keyboard .key.active .deviation-value { color: #0a2d2d; font-weight: bold; }
+body.layout-block4 #harmony-keyboard .key.active .deviation-marker { background: #0a2d2d; opacity: 0.5; }
+/* Z15.1: Das zweite ✕ der installierten App bleibt rot. */
+body.layout-block4 #fullscreen-toggle.armed { color: var(--play); }
