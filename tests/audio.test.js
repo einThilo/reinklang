@@ -270,3 +270,33 @@ test("S19: ein Anschlag vor dem Anhalten bricht silence ab", () => {
   assert.ok(engine.voiceAt(62));
   assert.deepEqual(engine.master.gain.calls.at(-1), ["setValueAtTime", 0.3, 0]);
 });
+
+// --- K8 (Prototyp ?laut=…) ---
+const { bassBoost } = await import("../js/audio.js");
+
+test("K8: bassBoost lässt hohe Töne und den Grundton unverändert", () => {
+  const high = new Float32Array([0, 1, 0.5, 0.3]);
+  assert.deepEqual(Array.from(bassBoost(high, 440)), Array.from(high));
+  const low = new Float32Array(20).fill(0.1);
+  const boosted = bassBoost(low, 65);
+  assert.ok(Math.abs(boosted[1] - 0.1) < 1e-6);     // 65 Hz: Grundton bleibt
+  assert.ok(boosted[4] > 0.25);                       // 260 Hz: kräftiger, voll gewichtet (Faktor 3)
+  assert.ok(Math.abs(boosted[19] - 0.1) > 0.1);      // 1235 Hz: noch im Bereich
+});
+
+test("K8: bassBoost wirkt umso stärker, je tiefer der Ton", () => {
+  const amps = () => new Float32Array(8).fill(0.1);
+  assert.ok(bassBoost(amps(), 100)[3] > bassBoost(amps(), 200)[3]);
+});
+
+test("K8: ?laut=pegel hebt den Gesamtpegel an und begrenzt härter, ohne Schalter bleibt alles", () => {
+  const plain = new AudioEngine("piano");
+  plain.ensureStarted();
+  assert.equal(plain.master.gain.value, 0.3);
+  assert.equal(plain.limiter.threshold.value, -24);
+
+  const loud = new AudioEngine("piano", { loudness: "pegel" });
+  loud.ensureStarted();
+  assert.equal(loud.master.gain.value, 0.6);
+  assert.equal(loud.limiter.threshold.value, -12);
+});

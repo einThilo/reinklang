@@ -53,6 +53,20 @@ export function harmonicAmplitudes(instrument, baseFreq, nyquist) {
   return amplitudes;
 }
 
+// Prototyp K8 (`?laut=bass|beides`): Kleine Lautsprecher geben tiefe Grundtöne kaum wieder. Bei tiefen
+// Tönen werden deshalb die Teiltöne zwischen 150 und 2000 Hz verstärkt, die das Ohr hört und aus denen es
+// den Grundton ergänzt. Der Grundton selbst und Töne ab 350 Hz bleiben, wie sie sind; alles bleibt
+// harmonisch. Faktor bis 3 bei 65 Hz und tiefer, darüber abnehmend.
+export function bassBoost(amplitudes, baseFreq) {
+  const weight = Math.min(Math.max((350 - baseFreq) / (350 - 65), 0), 1);
+  if (weight === 0) return amplitudes;
+  for (let k = 2; k < amplitudes.length; k++) {
+    const freq = k * baseFreq;
+    if (freq >= 150 && freq <= 2000) amplitudes[k] *= 1 + 2 * weight;
+  }
+  return amplitudes;
+}
+
 // Lautstärke einer Stimme zum Zeitpunkt t, berechnet aus dem geplanten Verlauf:
 // linearer Anschlag auf 1, dann exponentielles Abklingen auf die Haltelautstärke;
 // nach dem Loslassen exponentieller Ausklang auf MIN_GAIN.
@@ -106,9 +120,14 @@ export function preferPlayback(nav = globalThis.navigator) {
 }
 
 export class AudioEngine {
-  constructor(instrumentKey) {
+  // `loudness`: Prototyp K8 (`?laut=pegel|bass|beides`), sonst null.
+  constructor(instrumentKey, { loudness = null } = {}) {
     this.ctx = null;
     this.master = null;
+    this.loudness = loudness;
+    const louder = loudness === "pegel" || loudness === "beides";
+    this.masterGain = louder ? 0.6 : MASTER_GAIN;
+    this.boostBass = loudness === "bass" || loudness === "beides";
 
     this.instruments = INSTRUMENTS;
     this.currentInstrument = instrumentKey;
@@ -129,7 +148,7 @@ export class AudioEngine {
       this.ctx = new AudioContextCtor();
 
       this.master = this.ctx.createGain();
-      this.master.gain.value = MASTER_GAIN;
+      this.master.gain.value = this.masterGain;
 
       this.limiter = this.ctx.createDynamicsCompressor();
       this.limiter.threshold.value = -24.0;
@@ -137,6 +156,13 @@ export class AudioEngine {
       this.limiter.ratio.value = 20.0;
       this.limiter.attack.value = 0.003;
       this.limiter.release.value = 0.05;
+      if (this.masterGain !== MASTER_GAIN) {
+        // K8 `pegel`: doppelter Pegel; der Kompressor greift später, aber härter, damit nichts übersteuert.
+        this.limiter.threshold.value = -12.0;
+        this.limiter.knee.value = 6.0;
+        this.limiter.attack.value = 0.002;
+        this.limiter.release.value = 0.1;
+      }
 
       this.master.connect(this.limiter);
       this.limiter.connect(this.ctx.destination);
@@ -156,8 +182,8 @@ export class AudioEngine {
   restoreMaster() {
     const g = this.master.gain;
     g.cancelScheduledValues(0);
-    g.value = MASTER_GAIN;
-    g.setValueAtTime(MASTER_GAIN, this.ctx.currentTime);
+    g.value = this.masterGain;
+    g.setValueAtTime(this.masterGain, this.ctx.currentTime);
   }
 
   // S19 (Seite verborgen): blendet in 50 ms aus, beendet danach alle Stimmen sofort und hält die
@@ -211,6 +237,7 @@ export class AudioEngine {
     if (!wave) {
       const instrument = this.instruments[instrumentKey];
       const sines = harmonicAmplitudes(instrument, baseFreq, this.ctx.sampleRate / 2);
+      if (this.boostBass) bassBoost(sines, baseFreq);
       const cosines = new Float32Array(sines.length);
       wave = this.ctx.createPeriodicWave(cosines, sines, { disableNormalization: true });
       this.waves.set(key, wave);

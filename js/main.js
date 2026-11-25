@@ -47,7 +47,7 @@ function init() {
     startMidi: harmonyStart()
   });
 
-  const audioEngine = new AudioEngine(state.instrument);
+  const audioEngine = new AudioEngine(state.instrument, { loudness: options.laut });
 
   const frequencyOf = midi => frequencyFromState(midi, state);
 
