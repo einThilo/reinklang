@@ -864,6 +864,17 @@ body.layout-block4 .picker-label .arrow { display: block; grid-area: 1 / 2 / 3 /
 body.layout-block4 #tuning.inactive .picker-label { --c: #777; }
 body.layout-block4 #tuning.inactive .picker-label .val { color: #888; }
 
+/* Z12.3 (Entwurf h1, angepasst): Häuser als Tasten erkennbar. Alle werden nach unten heller, die unteren also zum
+   Fundament hin, die umgedrehten oberen zum Dach hin; dazu ein Schatten unter der ganzen Harmonieklaviatur.
+   „⇤“ und „1.“ in der Stimmungsfarbe, „⇤“ größer, „1.“ etwas weniger. */
+body.layout-block4 #harmony-keyboard .keyboard { filter: drop-shadow(0 3px 2px #000); }
+body.layout-block4 #harmony-keyboard .key:not(.active):not(.special) {
+  background: linear-gradient(to bottom, #2a2d32, #5a5f67);
+}
+body.layout-block4 #harmony-keyboard .special[data-special="left"] .special-label { font-size: 1.5em; color: var(--st); }
+body.layout-block4 #harmony-keyboard .special[data-special="right"] .special-label { font-size: 1.2em; color: var(--st); }
+body.layout-block4 #harmony-keyboard .special.selected .special-label { color: #0a2d2d; }
+
 /* Z15.1: Das zweite ✕ der installierten App bleibt rot. */
 body.layout-block4 #fullscreen-toggle.armed { color: var(--play); }
 
