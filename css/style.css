@@ -689,7 +689,8 @@ body.layout-block4 #btn-pitch-down { grid-area: 5 / 7 / 6 / 8; }
 #harmony-keyboard .special[data-special="right"] .special-label { right: 50%; }
 #harmony-keyboard .special.selected { background: #1fb5b5; }
 #harmony-keyboard .special[data-special="middle"] { background: #d22; }
-#harmony-keyboard .special.hidden { visibility: hidden; }
+/* W7: unsichtbar, aber antippbar (visibility: hidden nähme keine Berührung an). */
+#harmony-keyboard .special.hidden { opacity: 0; }
 
 /* Abweichung (Z1.1): Abweichung von der gleichstufigen Stimmung auf den Grundton-Tasten.
    Rote Linie = aktuelle Stimmung, Tastenmitte = gleichstufig, Ränder = ±50 Cent. Die Zahl steht am

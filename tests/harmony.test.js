@@ -84,3 +84,15 @@ test("Markierung blass oder gar keine", () => {
   keyboard.highlight(null);
   assert.deepEqual(classes(64), []);
 });
+
+const { middleHouseChange } = await import("../js/harmony.js");
+
+test("W7: Lücke e–f schaltet bei Tuning an aus", () => {
+  assert.deepEqual(middleHouseChange(true, true), { useTuning: false });
+  assert.deepEqual(middleHouseChange(true, false), { useTuning: false });
+});
+
+test("W7: Lücke e–f stellt das Tuning nur wieder her, wenn es schon einmal an war", () => {
+  assert.deepEqual(middleHouseChange(false, true), { useTuning: true });
+  assert.equal(middleHouseChange(false, false), null);
+});

@@ -1,5 +1,5 @@
 import { Keyboard, clamp } from "./keyboard.js";
-import { HarmonyKeyboard } from "./harmony.js";
+import { HarmonyKeyboard, middleHouseChange } from "./harmony.js";
 import { INSTRUMENTS } from "./instruments.js";
 import { TUNINGS, frequencyFromState, centsFromEqual, deviationPosition, formatCents } from "./tuning.js";
 import { AudioEngine } from "./audio.js";
@@ -192,12 +192,19 @@ function setupHarmony(harmonyKeyboard, updateRootHighlight) {
     }
   }
 
+  // W7: ob das Tuning in dieser Sitzung schon einmal an war; erst dann stellt die leere Lücke es wieder her.
+  let tuningWasOn = state.useTuning;
+  onStateChange(["useTuning"], (key, value) => { if (value) tuningWasOn = true; });
+
   harmonyKeyboard.onPress(
     midi => setStates({ harmonyMode: "manual", rootMidi: midi, useTuning: true }),
     name => {
       const { mode } = SPECIAL_HOUSES[name];
       if (mode) setStates({ harmonyMode: mode, useTuning: true });
-      else setState("useTuning", false);
+      else {
+        const change = middleHouseChange(state.useTuning, tuningWasOn);
+        if (change) setStates(change);
+      }
     }
   );
 
