@@ -12,6 +12,7 @@ const FILES = [
   "manifest.webmanifest",
   "css/style.css",
   "js/audio.js",
+  "js/computerkeys.js",
   "js/diagnose.js",
   "js/harmony.js",
   "js/installed.js",

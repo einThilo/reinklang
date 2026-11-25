@@ -9,6 +9,7 @@ import { readOptions } from "./options.js";
 import { keepScreenAwake } from "./wakelock.js";
 import { isInstalledApp } from "./installed.js";
 import { createStepRun } from "./steps.js";
+import { setupComputerKeys } from "./computerkeys.js";
 import { VERSION } from "./version.js";
 
 // Schalter für Prototypen (?name=wert), siehe options.js.
@@ -72,13 +73,14 @@ function init() {
   setupHarmony(harmonyKeyboard, updateRootHighlight);
   setupInstrument(audioEngine);
   setupTuning();
-  const cancelPedal = setupSustain(synth, mainKeyboard);
+  const sustain = setupSustain(synth, mainKeyboard);
+  setupComputerKeyboard(mainKeyboard, synth, audioEngine, sustain);
   setupPitch();
   setupTranspose(mainKeyboard, harmonyKeyboard, updateRootHighlight);
   setupFullscreen();
   setupDeviation(harmonyKeyboard);
 
-  setupStopWhenHidden(synth, mainKeyboard, audioEngine, cancelPedal);
+  setupStopWhenHidden(synth, mainKeyboard, audioEngine, sustain.cancelPedal);
 
   setupStartOverlay(audioEngine);
   registerServiceWorker();
@@ -276,7 +278,7 @@ function setupSustain(synth, mainKeyboard) {
     btnSustain.classList.toggle("selected", state.sustain);
   }
 
-  const cancelPedal = setupSustainPedal(synth, btnSustain, updateSustainVisual);
+  const pedal = setupSustainPedal(synth, btnSustain, updateSustainVisual);
 
   // S18: Liegt beim Release kein Finger auf der Hauptklaviatur, endet auch, was noch als gedrückt gilt
   // (z. B. wenn iOS das Loslassen verschluckt hat). Liegt ein Finger dort, klingt sein Ton weiter.
@@ -294,14 +296,18 @@ function setupSustain(synth, mainKeyboard) {
   }
   btnRelease.addEventListener("touchstart", event => releaseUnreleased(event.touches), { passive: true });
 
-  btnRelease.addEventListener("pointerdown", event => {
-    event.preventDefault();
+  // Release über den Button oder Escape (Z10).
+  function release(touches) {
     synth.releaseAllHeldKeys();
-    if (event.pointerType !== "touch") releaseUnreleased(lastTouches);
+    if (touches) releaseUnreleased(touches);
     btnRelease.classList.add("selected");
     setTimeout(() => {
       btnRelease.classList.remove("selected");
     }, 120);
+  }
+  btnRelease.addEventListener("pointerdown", event => {
+    event.preventDefault();
+    release(event.pointerType === "touch" ? null : lastTouches);
   });
 
   // Rahmen im Rot der gehaltenen Tasten, solange Release etwas beenden würde (W6).
@@ -312,45 +318,76 @@ function setupSustain(synth, mainKeyboard) {
     updateSustainVisual();
   });
   updateSustainVisual();
-  return cancelPedal;
+  return {
+    cancelPedal: pedal.cancel,
+    pedalKey: down => (down ? pedal.press("Space") : pedal.lift("Space")),
+    releaseKey: () => release(lastTouches)
+  };
 }
 
 // Der Sustain-Button wirkt als Pedal, solange er gedrückt ist (W4.2). Ändert sich währenddessen kein
 // Tastenzustand, wirkt er beim Loslassen als Umschalter bzw. hält gedrückte Tasten (S3, siehe `pedalUp`).
-// Nach dem Pedal bleibt Sustain, wie es vorher war.
+// Nach dem Pedal bleibt Sustain, wie es vorher war. Die Leertaste wirkt genauso (Z10).
+// Liefert `press(owner)`, `lift(owner)` und `cancel()`; `owner` ist der Finger oder "Space".
 function setupSustainPedal(synth, btnSustain, updateSustainVisual) {
-  let pedalPointer = null;
+  let pedalOwner = null;
 
-  btnSustain.addEventListener("pointerdown", event => {
-    event.preventDefault();
-    if (pedalPointer !== null) return;
-    pedalPointer = event.pointerId;
-    try {
-      btnSustain.setPointerCapture(event.pointerId);
-    } catch {}
+  function press(owner) {
+    if (pedalOwner !== null) return false;
+    pedalOwner = owner;
     synth.pedalDown();
     btnSustain.classList.add("selected");
-  });
-
-  const release = event => {
-    if (event.pointerId !== pedalPointer) return;
-    pedalPointer = null;
+    return true;
+  }
+  function lift(owner) {
+    if (owner !== pedalOwner) return;
+    pedalOwner = null;
     const result = synth.pedalUp();
     if (result === "toggle") setState("sustain", !state.sustain);
     updateSustainVisual();
-  };
+  }
+
+  btnSustain.addEventListener("pointerdown", event => {
+    event.preventDefault();
+    if (!press(event.pointerId)) return;
+    try {
+      btnSustain.setPointerCapture(event.pointerId);
+    } catch {}
+  });
+  const release = event => lift(event.pointerId);
   btnSustain.addEventListener("pointerup", release);
   btnSustain.addEventListener("pointercancel", release);
 
   // Vergisst ein getretenes Pedal, ohne dass sein Loslassen etwas bewirkt (S19).
-  return () => {
-    if (pedalPointer === null) return;
-    try {
-      btnSustain.releasePointerCapture(pedalPointer);
-    } catch {}
-    pedalPointer = null;
+  function cancel() {
+    if (pedalOwner === null) return;
+    if (typeof pedalOwner === "number") {
+      try {
+        btnSustain.releasePointerCapture(pedalOwner);
+      } catch {}
+    }
+    pedalOwner = null;
     updateSustainVisual();
-  };
+  }
+
+  return { press, lift, cancel };
+}
+
+// Z10: Spielen mit der Computertastatur auf den sichtbaren Tasten; Leertaste = Sustain, Escape = Release.
+function setupComputerKeyboard(mainKeyboard, synth, audioEngine, sustain) {
+  const computerKeys = setupComputerKeys({
+    target: document,
+    getKeys: () => mainKeyboard.keys,
+    cutEdgeKeys: true,
+    onNote: (type, midi) => {
+      if (type === "down") audioEngine.ensureStarted();
+      synth.handlePointerEvent(type, midi);
+    },
+    onPedal: sustain.pedalKey,
+    onRelease: sustain.releaseKey
+  });
+  otherPresses = computerKeys.anyDown;
+  forgetOtherPresses = computerKeys.forget;
 }
 
 // S19: Ist die Seite verborgen (Bildschirm aus, andere App, Tab im Hintergrund), endet alles, was klingt,
