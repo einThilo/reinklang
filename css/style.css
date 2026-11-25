@@ -875,6 +875,20 @@ body.layout-block4 #harmony-keyboard .special[data-special="left"] .special-labe
 body.layout-block4 #harmony-keyboard .special[data-special="right"] .special-label { font-size: 1.2em; color: var(--st); }
 body.layout-block4 #harmony-keyboard .special.selected .special-label { color: #0a2d2d; }
 
+/* Z9 (Entwurf p3): Tastenanzahl mit kleinem Klaviatur-Zeichen und −/+, Stimmton ▲/▼; beides etwas größer. */
+.mini-keys {
+  display: inline-block;
+  width: 1.6em;
+  height: 1em;
+  margin-right: 0.2em;
+  vertical-align: -0.1em;
+  background: repeating-linear-gradient(to right, currentColor 0 0.28em, transparent 0.28em 0.36em);
+  opacity: 0.8;
+}
+body.layout-block4 :is(#keyboard-tools [data-action$="Keys"], #pitch button) {
+  font-size: clamp(14px, 4.5vmin, 26px);
+}
+
 /* Z15.1: Das zweite ✕ der installierten App bleibt rot. */
 body.layout-block4 #fullscreen-toggle.armed { color: var(--play); }
 

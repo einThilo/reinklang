@@ -34,8 +34,8 @@
     <input type="number" id="tone-input">
     <span id="hz-unit">Hz</span>
     <div class="step-control">
-      <button id="btn-pitch-up">+</button>
-      <button id="btn-pitch-down">-</button>
+      <button id="btn-pitch-up">▲</button>
+      <button id="btn-pitch-down">▼</button>
     </div>
   </div>
   <div class="sustain-release-half" id="btn-sustain">Sustain</div>
@@ -57,8 +57,9 @@
     <button type="button" data-action="semiDown">&lt;</button>
     <button type="button" data-action="semiUp">&gt;</button>
     <button type="button" data-action="octUp">&gt;&gt;</button>
-    <button type="button" data-action="decKeys">-</button>
-    <button type="button" data-action="incKeys">+</button>
+    <!-- Z9: kleines Klaviatur-Zeichen und −/+ für die Tastenanzahl. -->
+    <button type="button" data-action="decKeys"><span class="mini-keys"></span>−</button>
+    <button type="button" data-action="incKeys"><span class="mini-keys"></span>+</button>
   </div>
 
   <div id="keyboard"></div>
