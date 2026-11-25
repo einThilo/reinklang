@@ -1,8 +1,10 @@
 // Schalter für Prototypen aus der Adresse (?name=wert). Es gelten nur die hier genannten Namen
-// und Werte; alles andere ergibt null, also die Vorgabe. Beschreibung je Schalter: docs/PROTOTYPEN.md.
-// Derzeit gibt es keine Schalter (W5.1 `wach` ist seit 2026-11-18 Vorgabe); `diagnose` und `layout`
-// werden in diagnose.js bzw. main.js gelesen.
-export const SWITCHES = {};
+// und Werte; alles andere ergibt null, also die Vorgabe. Beschreibung je Schalter: docs/aufgaben/<ID>.md.
+// `diagnose` und `layout` werden in diagnose.js bzw. main.js gelesen.
+export const SWITCHES = {
+  // L10: Querformat im Browser erzwingen (App drehen, im Vollbild sperren).
+  quer: ["drehen"]
+};
 
 export function readOptions(search, switches = SWITCHES) {
   const params = new URLSearchParams(search);

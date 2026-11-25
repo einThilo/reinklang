@@ -20,6 +20,7 @@ const FILES = [
   "js/keyboard.js",
   "js/main.js",
   "js/options.js",
+  "js/orientation.js",
   "js/player.js",
   "js/state.js",
   "js/steps.js",

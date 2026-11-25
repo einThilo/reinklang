@@ -10,6 +10,7 @@ import { keepScreenAwake } from "./wakelock.js";
 import { isInstalledApp } from "./installed.js";
 import { createStepRun } from "./steps.js";
 import { setupComputerKeys } from "./computerkeys.js";
+import { keepLandscape, lockLandscape } from "./orientation.js";
 import { VERSION } from "./version.js";
 
 // Schalter für Prototypen (?name=wert), siehe options.js.
@@ -29,6 +30,7 @@ document.addEventListener("DOMContentLoaded", init);
 
 function init() {
   setupLayout();
+  if (options.quer === "drehen") keepLandscape(window, document);
 
   const mainKeyboard = new Keyboard({
     container: document.getElementById("keyboard"),
@@ -621,6 +623,11 @@ function setupFullscreen() {
     try {
       if (document.fullscreenElement) {
         await document.exitFullscreen();
+      } else if (document.fullscreenEnabled && options.quer === "drehen") {
+        // L10: Die ganze Seite ins Vollbild, damit die Drehung von #app wirkt (der Browser hebt
+        // `transform` am Vollbild-Element auf), dann das Querformat sperren, wo es geht.
+        await document.documentElement.requestFullscreen();
+        await lockLandscape();
       } else if (document.fullscreenEnabled) {
         await appRoot.requestFullscreen();
       }
