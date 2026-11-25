@@ -28,7 +28,8 @@ export class Keyboard {
   }
 
   getNoteName(midi) {
-    const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    // Deutsche Tonnamen: H statt B (Z11).
+    const noteNames = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "H"];
     const note = noteNames[midi % 12];
     const octave = Math.floor(midi / 12) - 1;
     return note + octave;

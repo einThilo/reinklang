@@ -184,12 +184,12 @@ function setupKeyboardRange(mainKeyboard) {
 }
 
 // Grundton-Klaviatur (L7). Die Sonderhäuser: links „⇤“ (Automatik „Tiefster“), rechts „1.“
-// (Automatik „Erster“), in der Lücke e–f „tuning off“. Ein Ton- oder Automatikhaus schaltet das
-// Tuning ein, „tuning off“ schaltet es aus und ist nur bei eingeschaltetem Tuning sichtbar.
+// (Automatik „Erster“), in der Lücke e–f „Stimmung aus“. Ein Ton- oder Automatikhaus schaltet das
+// Tuning ein, „Stimmung aus“ schaltet es aus und ist nur bei eingeschaltetem Tuning sichtbar.
 const SPECIAL_HOUSES = {
   left: { label: "⇤", mode: "lowest" },
   right: { label: "1.", mode: "first" },
-  middle: { label: "tuning off", mode: null }
+  middle: { label: "Stimmung aus", mode: null }
 };
 
 function setupHarmony(harmonyKeyboard, updateRootHighlight) {

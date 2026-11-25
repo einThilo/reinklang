@@ -1,6 +1,6 @@
 export const INSTRUMENTS = {
   pad: {
-    name: "Ambient Pad",
+    name: "Ambient-Pad",
     attackTime: 0.15,
     decayTime: 0.3,
     sustainGain: 1,
@@ -23,7 +23,7 @@ export const INSTRUMENTS = {
     ]
   },
   piano: {
-    name: "Electric Piano",
+    name: "E-Piano",
     attackTime: 0.02,
     decayTime: 1.1,
     sustainGain: 0.1,

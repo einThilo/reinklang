@@ -671,7 +671,7 @@ body.layout-block4 #btn-pitch-down { grid-area: 5 / 7 / 6 / 8; }
   clip-path: polygon(1px 0, calc(100% - 1px) 0, calc(100% - 1px) 60.66%, 50% 100%, 1px 60.66%);
 }
 
-/* Sonderhäuser (L7): links „⇤“, rechts „1.“ (je zur Hälfte sichtbar), in der Lücke e–f „tuning off“.
+/* Sonderhäuser (L7): links „⇤“, rechts „1.“ (je zur Hälfte sichtbar), in der Lücke e–f „Stimmung aus“.
    Die Beschriftung steht mittig im sichtbaren Rechteck über der Spitze. */
 #harmony-keyboard .special {
   background: #5d6b76;
@@ -750,7 +750,7 @@ body.layout-block4 {
   --kb: #deddda;     /* Tastenbereich, Transposition */
   --ins: #eaa53e;    /* Instrument */
   --fs: #9aa0a6;     /* Vollbild */
-  --off: #d8443c;    /* Balken über „tuning off“ */
+  --off: #d8443c;    /* Balken über „Stimmung aus“ */
   --house: #3a3d42;  /* Häuser der Harmonieklaviatur */
   --surf: #222428;   /* Knöpfe */
   --bg: #141517;     /* Hintergrund */

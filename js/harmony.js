@@ -25,7 +25,7 @@ export function houseLayout() {
   return [...lower, ...upper];
 }
 
-// Was ein Tipp auf die Lücke e–f bewirkt (W7): Bei eingeschaltetem Tuning ist dort „tuning off“ und schaltet
+// Was ein Tipp auf die Lücke e–f bewirkt (W7): Bei eingeschaltetem Tuning ist dort „Stimmung aus“ und schaltet
 // es aus. Bei ausgeschaltetem Tuning ist die Lücke leer; war das Tuning in dieser Sitzung schon einmal an,
 // schaltet der Tipp es wieder ein, und Grundton und Modus sind die gemerkten. Sonst geschieht nichts (null).
 export function middleHouseChange(useTuning, tuningWasOn) {
