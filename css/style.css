@@ -812,6 +812,29 @@ body.layout-block4 .key.white .deviation-marker { bottom: 17px; }
 body.layout-block4 .key.black .deviation-marker { top: 17px; }
 body.layout-block4 #harmony-keyboard .key.active .deviation-value { color: #0a2d2d; font-weight: bold; }
 body.layout-block4 #harmony-keyboard .key.active .deviation-marker { background: #0a2d2d; opacity: 0.5; }
+/* W3 (Entwurf w3a): Stimmton als erkennbares Eingabefeld, dünner Rahmen in der Stimmungsfarbe, hellerer Grund,
+   Zahl größer, „Hz“ klein dahinter (eigenes Element in derselben Zelle, nimmt keine Berührung an). */
+body.layout-block4 #tone-input {
+  background: #1b2d2d;
+  box-shadow: inset 0 0 0 1px #000, inset 0 0 0 3px #27b3b366;
+  font-size: clamp(14px, 4vmin, 26px);
+  font-weight: bold;
+  text-align: left;
+  padding-left: 14%;
+}
+#hz-unit { display: none; }
+body.layout-block4 #hz-unit {
+  display: block;
+  grid-area: 4 / 7 / 5 / 8;
+  align-self: center;
+  justify-self: end;
+  margin-right: 12%;
+  color: #53a0a0;
+  font-size: clamp(9px, 2.2vmin, 14px);
+  pointer-events: none;
+  z-index: 1;
+}
+
 /* Z15.1: Das zweite ✕ der installierten App bleibt rot. */
 body.layout-block4 #fullscreen-toggle.armed { color: var(--play); }
 
