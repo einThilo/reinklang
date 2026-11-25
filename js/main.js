@@ -237,15 +237,22 @@ function setupInstrument(audioEngine) {
     instrumentSelect.appendChild(option);
   }
 
-  instrumentSelect.value = state.instrument;
+  // Z12.2: Die Beschriftung zeigt den gewählten Namen.
+  const nameLabel = document.querySelector("#instrument .val");
+  function showName() {
+    instrumentSelect.value = state.instrument;
+    nameLabel.textContent = INSTRUMENTS[state.instrument]?.name ?? "";
+  }
+
   instrumentSelect.addEventListener("change", () => {
     setState("instrument", instrumentSelect.value);
   });
 
   onStateChange(["instrument"], (key, value) => {
     audioEngine.setInstrument(value);
-    instrumentSelect.value = value;
+    showName();
   });
+  showName();
 }
 
 // Auswahlliste für die Stimmung.
@@ -259,15 +266,20 @@ function setupTuning() {
     tuningSelect.appendChild(option);
   });
 
+  // Z12.2: Die Beschriftung zeigt den gewählten Namen und ist grau, solange das Tuning aus ist.
+  const tuningGroup = document.getElementById("tuning");
+  const nameLabel = tuningGroup.querySelector(".val");
   function updateTuningControls() {
     tuningSelect.value = state.tuningMode;
+    nameLabel.textContent = TUNINGS[state.tuningMode]?.name ?? "";
+    tuningGroup.classList.toggle("inactive", !state.useTuning);
   }
 
   tuningSelect.addEventListener("change", () => {
     setState("tuningMode", tuningSelect.value);
   });
 
-  onStateChange(["tuningMode"], updateTuningControls);
+  onStateChange(["tuningMode", "useTuning"], updateTuningControls);
   updateTuningControls();
 }
 
