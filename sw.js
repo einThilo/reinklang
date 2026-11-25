@@ -27,6 +27,7 @@ const FILES = [
   "js/tuning.js",
   "js/version.js",
   "js/wakelock.js",
+  "js/zoom.js",
   "icons/apple-touch-icon.png",
   "icons/symbol-192.png",
   "icons/symbol-512.png",

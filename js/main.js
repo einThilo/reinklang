@@ -10,6 +10,7 @@ import { keepScreenAwake } from "./wakelock.js";
 import { isInstalledApp } from "./installed.js";
 import { createStepRun } from "./steps.js";
 import { setupComputerKeys } from "./computerkeys.js";
+import { undoZoom } from "./zoom.js";
 import { keepLandscape, lockLandscape } from "./orientation.js";
 import { VERSION } from "./version.js";
 
@@ -101,11 +102,15 @@ function init() {
   // W5: Bildschirm wach halten, solange die Seite sichtbar ist (wirkt nur über https:// oder localhost).
   const awake = keepScreenAwake(navigator, document);
 
+  // S16: Vergrößerung unter iOS zurücknehmen.
+  const zoom = undoZoom(window, document);
+
   // Prototyp S1.1 (`?diagnose=1`): Das Feld aus diagnose.js erfährt, dass der Start durchgelaufen ist.
   if (window.reinklangDiagnose) {
     window.reinklangDiagnose.report("Wachhalten", () =>
       awake.supported ? (awake.isActive() ? "aktiv" : "nicht aktiv") : "hier nicht möglich (braucht https://)");
     window.reinklangDiagnose.report("Klang", () => (audioEngine.ctx ? audioEngine.ctx.state : "noch nicht angelegt"));
+    window.reinklangDiagnose.report("Zoom", () => zoom.scale().toFixed(2));
     window.reinklangDiagnose.report("main.js", "gestartet");
   }
 }

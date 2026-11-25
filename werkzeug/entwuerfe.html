@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reinklang – Entwürfe</title>
+<style>
+  body { margin: 0; padding: 16px; background: #444; font-family: sans-serif; color: #eee; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  p { margin: 0 0 12px; font-size: 14px; color: #ccc; max-width: 70em; }
+  nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+  nav a { padding: 6px 10px; border-radius: 6px; background: #2a2a2a; color: #8fd; text-decoration: none; font-size: 14px; }
+  nav a.current { background: #8fd; color: #111; }
+  #gallery { display: flex; flex-wrap: wrap; gap: 20px; }
+  .card { background: #2a2a2a; border-radius: 10px; padding: 10px; width: var(--w); }
+  .card h2 { font-size: 15px; margin: 0 0 2px; }
+  .card .desc { font-size: 13px; color: #bbb; margin: 0 0 8px; min-height: 2.6em; }
+  .frame { width: var(--w); height: calc(var(--w) * 360 / 800); overflow: hidden; }
+  .frame iframe {
+    width: 800px; height: 360px; border: 0; display: block;
+    transform: scale(var(--s)); transform-origin: 0 0;
+  }
+  .card .links { margin-top: 8px; display: flex; gap: 14px; font-size: 14px; }
+  .card .links a { color: #8fd; cursor: pointer; }
+  #single, #single iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; }
+</style>
+</head>
+<body>
+<h1>Entwürfe zum Vergleichen</h1>
+<p>Die echte App im Layout block4, je Rahmen ein Entwurf. Ton nur aus dem zuletzt berührten Rahmen. „groß öffnen“
+zeigt einen Entwurf allein (auch am Handy über Tailscale). Nur Aussehen: Die App selbst bleibt unverändert.<br>
+<label><input type="checkbox" id="sync" checked> Berührungen in allen Rahmen gleichzeitig</label></p>
+<nav id="topics"></nav>
+<p id="topic-desc"></p>
+<div id="gallery"></div>
+
+<script>
+/* ============================================================
+   Gemeinsame Bausteine (laufen im Rahmen; `doc`, `win` sind dessen document und window)
+   ============================================================ */
+
+// Liste zeigt den gewählten Namen (Z12.2): Überschrift klein, Name groß, Listenzeichen.
+function showChosenName(doc) {
+  for (const group of doc.querySelectorAll(".sound-control-group")) {
+    const label = group.querySelector(".picker-label");
+    const select = group.querySelector("select");
+    const caption = label.textContent;
+    label.innerHTML = `<small class="cap"></small><span class="val"></span><span class="arrow">▾</span>`;
+    label.querySelector(".cap").textContent = caption;
+    const update = () => { label.querySelector(".val").textContent = select.selectedOptions[0]?.textContent ?? ""; };
+    select.addEventListener("change", update);
+    update();
+  }
+}
+
+// Am <body> die Klasse „tuning-off“, solange das Tuning aus ist (erkannt an „Stimmung aus“ in der Lücke).
+function markTuningOff(doc, win) {
+  const middle = doc.querySelector('#harmony-keyboard .special[data-special="middle"]');
+  const update = () => doc.body.classList.toggle("tuning-off", middle.classList.contains("hidden"));
+  new win.MutationObserver(update).observe(middle, { attributes: true });
+  update();
+}
+
+// Hz-Einheit neben dem Zahlenfeld (W3), als eigenes Element in derselben Zelle.
+function addHzUnit(doc) {
+  const unit = doc.createElement("span");
+  unit.id = "hz-unit";
+  unit.textContent = "Hz";
+  doc.getElementById("tone-input").after(unit);
+}
+
+// Beschriftungen tauschen: { "#selector": "Text oder HTML" }.
+function relabel(doc, labels) {
+  for (const [selector, html] of Object.entries(labels)) {
+    const element = doc.querySelector(selector);
+    if (element) element.innerHTML = html;
+  }
+}
+
+// Startfläche umbauen (Z21): Logo, Aufforderung, Erklärung; die Versionsnummer bleibt.
+function rebuildOverlay(doc, { logo, title, texts, layout }) {
+  const overlay = doc.getElementById("start-overlay");
+  if (!overlay) return;
+  const version = doc.getElementById("start-version");
+  overlay.textContent = "";
+  overlay.classList.add("z21", layout);
+  const box = doc.createElement("div");
+  box.className = "z21-box";
+  box.innerHTML = `
+    ${logo ? `<img class="z21-logo" src="icons/symbol.svg" alt="">` : ""}
+    ${title ? `<div class="z21-title">Reinklang</div>` : ""}
+    <div class="z21-tap">Tippen zum Starten</div>
+    <ul class="z21-texts">${texts.map(text => `<li>${text}</li>`).join("")}</ul>`;
+  overlay.appendChild(box);
+  if (version) overlay.appendChild(version);
+}
+
+// Hinweise direkt an den Bereichen (Z21, Variante mit Markierungen).
+function overlayHints(doc, hints) {
+  const overlay = doc.getElementById("start-overlay");
+  if (!overlay) return;
+  for (const { selector, text } of hints) {
+    const target = doc.querySelector(selector);
+    if (!target) continue;
+    const r = target.getBoundingClientRect();
+    const hint = doc.createElement("div");
+    hint.className = "z21-hint";
+    hint.style.left = r.left + "px";
+    hint.style.top = r.top + "px";
+    hint.style.width = r.width + "px";
+    hint.style.height = r.height + "px";
+    hint.innerHTML = `<span>${text}</span>`;
+    overlay.appendChild(hint);
+  }
+}
+
+/* ============================================================
+   Themen und Entwürfe
+   Jeder Entwurf: Name, Beschreibung, CSS (gilt unter body#design) und optional Code im Rahmen.
+   ============================================================ */
+
+const P = "body#design.layout-block4";   // Vorsilbe, damit die Regeln die aus style.css übertreffen
+
+// Gemeinsames CSS für die Listen-Entwürfe (Z12.2).
+function LIST_BASE() {
+  return `
+${P} .picker-label { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto 1fr;
+  align-items: center; justify-items: start; padding: 2px 10px 4px; text-align: left; }
+${P} .picker-label .cap { grid-area: 1 / 1 / 2 / 3; font-size: max(9px, 0.7em); font-weight: normal; opacity: 0.85; }
+${P} .picker-label .val { grid-area: 2 / 1 / 3 / 2; color: #eee; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+${P} .picker-label .arrow { grid-area: 1 / 2 / 3 / 3; color: var(--c); margin-left: 6px; }
+${P}.tuning-off #tuning .picker-label { --c: #777; }
+${P}.tuning-off #tuning .picker-label .val { color: #888; }`;
+}
+
+// „⇤“ und „1.“ größer (Z12.3).
+const SPECIAL_BIG = `
+${P} #harmony-keyboard .special:not([data-special="middle"]) .special-label { font-size: 1.5em; color: #27b3b3; }
+${P} #harmony-keyboard .special.selected .special-label { color: #0a2d2d; }`;
+
+// „⇤ tief“ und „1. erst“ mit Wort darunter (Z12.3).
+const SPECIAL_WORDS = `
+${P} #harmony-keyboard .special:not([data-special="middle"]) .special-label { flex-direction: column; font-size: 1.3em; line-height: 1; color: #27b3b3; }
+${P} #harmony-keyboard .special .special-label small { font-size: 0.5em; font-weight: normal; opacity: 0.85; }
+${P} #harmony-keyboard .special.selected .special-label { color: #0a2d2d; }`;
+
+// Zweizeilige Beschriftung der +/−-Knöpfe (Z9).
+const PM_BASE = `
+${P} :is(#keyboard-tools [data-action$="Keys"], #pitch button) { display: flex; flex-direction: column; align-items: center;
+  justify-content: center; line-height: 1.05; font-size: clamp(14px, 4.5vmin, 26px); }
+${P} :is(#keyboard-tools button, #pitch button) small { font-size: max(9px, 0.5em); font-weight: normal; opacity: 0.85; }`;
+
+// Gemeinsames CSS der Startflächen (Z21).
+const START_BASE = `
+${P} #start-overlay.z21 { flex-direction: column; text-align: center; }
+${P} .z21-box { display: flex; flex-direction: column; align-items: center; gap: 1.5vh; }
+${P} .z21-logo { width: clamp(48px, 16vmin, 110px); height: auto; background: #fff; border-radius: 18%; padding: 4px; }
+${P} .z21-title { font-size: clamp(18px, 6vmin, 36px); letter-spacing: 0.04em; }
+${P} .z21-tap { font-size: clamp(16px, 5vmin, 30px); }
+${P} .z21-texts { list-style: none; margin: 1vh 0 0; padding: 0 6vw; font-size: clamp(11px, 3.2vmin, 18px);
+  font-weight: normal; line-height: 1.4; color: #ddd; }`;
+
+const TOPICS = {
+  w3: {
+    name: "W3 Stimmton-Feld",
+    desc: "Stimmton-Zahlenfeld: größer, mit „Hz“, erkennbar zum Eintippen. Rechts die Spalte mit +, Zahl, −.",
+    variants: {
+      heute: { name: "heute", desc: "Zum Vergleich.", css: "" },
+      w3a: {
+        name: "Dezente Box",
+        desc: "Feld mit dünnem Rahmen in der Stimmungsfarbe und etwas hellerem Grund, Zahl größer, „Hz“ klein dahinter.",
+        css: `
+${P} #tone-input { background: #1b2d2d; box-shadow: inset 0 0 0 1px #000, inset 0 0 0 3px #27b3b366;
+  font-size: clamp(14px, 4vmin, 26px); font-weight: bold; text-align: left; padding-left: 14%; }
+${P} #hz-unit { grid-area: 4 / 7 / 5 / 8; align-self: center; justify-self: end; margin-right: 12%;
+  color: #53a0a0; font-size: clamp(9px, 2.2vmin, 14px); pointer-events: none; z-index: 1; }`,
+        run: doc => addHzUnit(doc)
+      },
+      w3b: {
+        name: "Eingabefeld hell",
+        desc: "Wie ein Textfeld: heller Grund, dunkle Schrift, Schatten nach innen; „Hz“ als Einheit im Feld.",
+        css: `
+${P} #tone-input { background: #d7ecec; color: #0a2d2d; box-shadow: inset 0 2px 4px #0008, inset 0 0 0 2px #141517;
+  font-size: clamp(14px, 4vmin, 26px); font-weight: bold; text-align: left; padding-left: 12%; }
+${P} #hz-unit { grid-area: 4 / 7 / 5 / 8; align-self: center; justify-self: end; margin-right: 12%;
+  color: #30787a; font-size: clamp(9px, 2.2vmin, 14px); font-weight: bold; pointer-events: none; z-index: 1; }`,
+        run: doc => addHzUnit(doc)
+      },
+      w3c: {
+        name: "Unterstrich und Stift",
+        desc: "Gestrichelte Linie unter der Zahl und ein kleiner Stift wie bei bearbeitbarem Text; „Hz“ hinter der Zahl.",
+        css: `
+${P} #tone-input { font-size: clamp(14px, 4vmin, 26px); font-weight: bold; text-align: left; padding-left: 10%;
+  background: repeating-linear-gradient(to right, #27b3b3 0 4px, transparent 4px 7px) no-repeat 12% 80% / 55% 2px, var(--surf); }
+${P} #hz-unit { grid-area: 4 / 7 / 5 / 8; align-self: center; justify-self: end; margin-right: 8%;
+  color: #53a0a0; font-size: clamp(9px, 2.2vmin, 14px); pointer-events: none; z-index: 1; }
+${P} #hz-unit::before { content: "✎ "; color: #27b3b3; }`,
+        run: doc => addHzUnit(doc)
+      }
+    }
+  },
+
+  listen: {
+    name: "Z12.2 + Z12.5 Listen, Knöpfe, Umschalter",
+    desc: "Instrument und Stimmung zeigen den gewählten Namen und sind als Liste erkennbar. „Stimmung“ ist grau, " +
+      "solange das Tuning aus ist (erst einen Grundton tippen, dann „Stimmung aus“). Z12.5: Knopf, Umschalter " +
+      "(Sustain) und Liste sehen verschieden aus.",
+    variants: {
+      heute: { name: "heute", desc: "Zum Vergleich.", css: "" },
+      l1: {
+        name: "Dreieck",
+        desc: "Überschrift klein oben links, Name groß, ▾ rechts. Sonst wie heute.",
+        css: LIST_BASE() + `
+${P} .picker-label .arrow { font-size: 0.9em; opacity: 0.9; }`,
+        run: (doc, win) => { showChosenName(doc); markTuningOff(doc, win); }
+      },
+      l2: {
+        name: "Feld mit Linie",
+        desc: "Liste als Feld: Linie in der Gruppenfarbe unten, ▾ rechts, etwas hellerer Grund.",
+        css: LIST_BASE() + `
+${P} .picker-label { background: #2a2d32; box-shadow: inset 0 -3px 0 var(--c), inset 0 0 0 1px #000; }
+${P}.tuning-off #tuning .picker-label { box-shadow: inset 0 -3px 0 #666, inset 0 0 0 1px #000; }`,
+        run: (doc, win) => { showChosenName(doc); markTuningOff(doc, win); }
+      },
+      l3: {
+        name: "Drei Arten",
+        desc: "Knöpfe leicht erhaben (Verlauf, Kante unten). Listen vertieft mit abgerundetem Rahmen und ▾. " +
+          "Sustain als Umschalter mit Leuchtpunkt, der eingeschaltet leuchtet.",
+        css: LIST_BASE() + `
+${P} :is(#keyboard-tools button, .tone-btn, #pitch button, #fullscreen-toggle) {
+  background: linear-gradient(to bottom, #43474f, #25272b); box-shadow: inset 0 1px 0 #5c616a, inset 0 -4px 0 #0b0c0d, inset 0 0 0 1px #000; }
+${P} .sound-control-group { padding: 4px; background: var(--bg); }
+${P} .picker-label { background: #141517; border-radius: 8px; box-shadow: inset 0 0 0 2px var(--c), inset 0 3px 6px #000; }
+${P}.tuning-off #tuning .picker-label { box-shadow: inset 0 0 0 2px #555, inset 0 3px 6px #000; }
+${P} #btn-sustain::before { content: ""; position: absolute; top: 18%; right: 12%; width: 12px; height: 12px;
+  border-radius: 50%; background: #3e2a29; box-shadow: inset 0 0 0 1px #000; }
+${P} #btn-sustain.selected::before { background: #ff6a5f; box-shadow: 0 0 8px #ff6a5f; }
+${P} #btn-sustain { position: relative; }`,
+        run: (doc, win) => { showChosenName(doc); markTuningOff(doc, win); }
+      }
+    }
+  },
+
+  haeuser: {
+    name: "Z12.3 Harmonieklaviatur",
+    desc: "Die Häuser sollen auch bei ausgeschaltetem Tuning als Tasten erkennbar sein; „⇤“ und „1.“ klarer. " +
+      "Zum Vergleichen einmal mit Tuning aus ansehen, dann einen Grundton tippen.",
+    variants: {
+      heute: { name: "heute", desc: "Zum Vergleich.", css: "" },
+      h1: {
+        name: "Verlauf und Schatten",
+        desc: "Häuser oben heller, unten dunkler, mit Schatten wie Tasten. „⇤“ und „1.“ größer in der Stimmungsfarbe.",
+        css: `
+${P} #harmony-keyboard .keyboard { filter: drop-shadow(0 3px 2px #000); }
+${P} #harmony-keyboard .key:not(.active):not(.special) { background: linear-gradient(to bottom, #5a5f67, #2e3136); }
+${P} #harmony-keyboard .key.black:not(.active):not(.special) { background: linear-gradient(to bottom, #2e3136, #4a4f57); }
+` + SPECIAL_BIG
+      },
+      h2: {
+        name: "Fugen",
+        desc: "Breitere, hellere Fugen zwischen den Häusern, sodass jedes Haus umrandet wirkt. „⇤ tief“ und „1. erst“ mit Wort.",
+        css: `
+${P} #harmony-keyboard .keyboard { background: #5a5e66; }
+${P} #harmony-keyboard .key.white { clip-path: polygon(3px 100%, 3px 40%, 50% 2px, calc(100% - 3px) 40%, calc(100% - 3px) 100%); }
+${P} #harmony-keyboard .key.black { clip-path: polygon(3px 0, calc(100% - 3px) 0, calc(100% - 3px) 60%, 50% calc(100% - 2px), 3px 60%); }
+` + SPECIAL_WORDS,
+        run: doc => relabel(doc, {
+          '#harmony-keyboard .special[data-special="left"] .special-label': "⇤<small>tief</small>",
+          '#harmony-keyboard .special[data-special="right"] .special-label': "1.<small>erst</small>"
+        })
+      },
+      h3: {
+        name: "Hell und dunkel wie Klaviertasten",
+        desc: "Untere Häuser hell wie weiße Tasten, obere dunkel wie schwarze. Gewählt bleibt türkis. „⇤“ und „1.“ größer.",
+        css: `
+${P} #harmony-keyboard .keyboard { background: #141517; }
+${P} #harmony-keyboard .key.white:not(.active) { background: linear-gradient(to bottom, #f2f2f2, #c9c9c9); }
+${P} #harmony-keyboard .key.black:not(.active):not(.special) { background: linear-gradient(to bottom, #111, #3a3a3a); }
+${P} #harmony-keyboard .key.white:not(.active) .deviation-value { color: #1d6060; }
+${P} #harmony-keyboard .key.white:not(.active) .deviation-marker { background: #1d6060; }
+` + SPECIAL_BIG
+      }
+    }
+  },
+
+  plusminus: {
+    name: "Z9 + und −",
+    desc: "Bisher stehen „+“/„−“ für die Tastenanzahl (Mitte) und den Stimmton (rechts). Entwürfe, die beides unterscheiden.",
+    variants: {
+      heute: { name: "heute", desc: "Zum Vergleich.", css: "" },
+      p1: {
+        name: "Mit Wort",
+        desc: "Tastenanzahl „− Taste“/„+ Taste“, Stimmton „− Hz“/„+ Hz“, jeweils klein unter dem Zeichen.",
+        css: PM_BASE,
+        run: doc => relabel(doc, {
+          '#keyboard-tools [data-action="decKeys"]': "−<small>Taste</small>",
+          '#keyboard-tools [data-action="incKeys"]': "+<small>Taste</small>",
+          "#btn-pitch-down": "−<small>Hz</small>",
+          "#btn-pitch-up": "+<small>Hz</small>"
+        })
+      },
+      p2: {
+        name: "Breiter und schmaler",
+        desc: "Tastenanzahl als Breite der Tasten: „←→“ breiter (weniger Tasten), „→←“ schmaler (mehr Tasten). " +
+          "Stimmton bleibt „+“/„−“.",
+        css: PM_BASE,
+        run: doc => relabel(doc, {
+          '#keyboard-tools [data-action="decKeys"]': "←→<small>breiter</small>",
+          '#keyboard-tools [data-action="incKeys"]': "→←<small>schmaler</small>"
+        })
+      },
+      p3: {
+        name: "Kleine Klaviatur",
+        desc: "Tastenanzahl mit einem kleinen Klaviatur-Zeichen und + bzw. −; Stimmton „▲“/„▼“ in der Stimmungsfarbe.",
+        css: PM_BASE + `
+${P} .mini-keys { display: inline-block; width: 1.6em; height: 1em; margin-right: 0.2em; vertical-align: -0.1em;
+  background: repeating-linear-gradient(to right, currentColor 0 0.28em, transparent 0.28em 0.36em); opacity: 0.8; }`,
+        run: doc => relabel(doc, {
+          '#keyboard-tools [data-action="decKeys"]': '<span><span class="mini-keys"></span>−</span>',
+          '#keyboard-tools [data-action="incKeys"]': '<span><span class="mini-keys"></span>+</span>',
+          "#btn-pitch-down": "▼",
+          "#btn-pitch-up": "▲"
+        })
+      }
+    }
+  },
+
+  start: {
+    name: "Z21 Startfläche",
+    desc: "Startfläche mit Logo und kurzer Erklärung. Ein Tipp schließt sie; „neu laden“ zeigt sie wieder. " +
+      "Die Texte sind Vorschläge.",
+    overlay: true,
+    variants: {
+      heute: { name: "heute", desc: "Zum Vergleich.", css: "" },
+      s1: {
+        name: "Logo oben",
+        desc: "Logo oben in der Mitte, darunter die Aufforderung, dann zwei Zeilen Erklärung.",
+        css: START_BASE + `
+${P} #start-overlay.top { justify-content: flex-start; padding-top: 5vh; }`,
+        run: doc => rebuildOverlay(doc, { logo: true, title: false, layout: "top", texts: [
+          "Einfach als Klavier spielen.",
+          "Oder oben einen Grundton wählen: Dann klingt alles rein gestimmt zu diesem Ton."
+        ] })
+      },
+      s2: {
+        name: "Logo mittig mit Namen",
+        desc: "Logo und „Reinklang“ in der Mitte, Aufforderung darunter, Erklärung klein am unteren Rand.",
+        css: START_BASE + `
+${P} #start-overlay.middle .z21-texts { position: absolute; left: 0; right: 0; bottom: 6vh; }`,
+        run: doc => rebuildOverlay(doc, { logo: true, title: true, layout: "middle", texts: [
+          "Spielen wie am Klavier – oder oben einen Grundton tippen:",
+          "Dann stimmt Reinklang jeden Ton rein zu diesem Grundton."
+        ] })
+      },
+      s3: {
+        name: "Hinweise an den Bereichen",
+        desc: "Logo und Aufforderung rechts über den Einstellungen, dazu Markierungen direkt über der Klaviatur und der Harmonieklaviatur.",
+        css: START_BASE + `
+${P} #start-overlay.hints { background: rgba(0, 0, 0, 0.72); }
+${P} .z21-hint { position: absolute; box-sizing: border-box; border: 2px dashed #8fd; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; pointer-events: none; }
+${P} .z21-hint span { background: #000c; color: #8fd; padding: 4px 10px; border-radius: 6px;
+  font-size: clamp(11px, 3vmin, 18px); font-weight: normal; }
+${P} #start-overlay.hints .z21-box { position: absolute; right: 1.5vw; top: 3vh; width: 33vw; z-index: 1; }
+${P} #start-overlay.hints .z21-texts { display: none; }`,
+        run: doc => {
+          rebuildOverlay(doc, { logo: true, title: false, layout: "hints", texts: [] });
+          overlayHints(doc, [
+            { selector: "#harmony-keyboard", text: "Grundton wählen: rein gestimmt spielen" },
+            { selector: "#keyboard", text: "Einfach spielen" }
+          ]);
+        }
+      }
+    }
+  }
+};
+
+/* ============================================================
+   Rahmen, Ton und gespiegelte Berührungen (wie design.html)
+   ============================================================ */
+
+const APP_URL = "../index.html?layout=block4";
+const NO_OVERLAY = `#start-overlay { display: none !important; }`;
+const frames = [];
+
+const params = new URLSearchParams(location.search);
+const topicId = TOPICS[params.get("thema")] ? params.get("thema") : Object.keys(TOPICS)[0];
+const topic = TOPICS[topicId];
+const single = params.get("v");
+
+function inject(iframe, variant, withOverlay) {
+  const doc = iframe.contentDocument;
+  const win = iframe.contentWindow;
+  doc.body.id = "design";
+  const style = doc.createElement("style");
+  style.textContent = (withOverlay ? "" : `body#design ${NO_OVERLAY}`) + variant.css;
+  doc.head.appendChild(style);
+  // Erst nach dem Start der App (DOMContentLoaded ist vorbei, die Startfläche liegt schon da).
+  if (variant.run) variant.run(doc, win);
+}
+
+if (single && topic.variants[single]) {
+  const variant = topic.variants[single];
+  document.body.innerHTML = `<div id="single"><iframe src="${APP_URL}" allow="fullscreen; autoplay"></iframe></div>`;
+  document.title = `Reinklang – ${topic.name}: ${variant.name}`;
+  const iframe = document.querySelector("#single iframe");
+  iframe.addEventListener("load", () => inject(iframe, variant, true));
+} else {
+  const nav = document.getElementById("topics");
+  for (const [id, t] of Object.entries(TOPICS)) {
+    const link = document.createElement("a");
+    link.href = `?thema=${id}`;
+    link.textContent = t.name;
+    if (id === topicId) link.className = "current";
+    nav.appendChild(link);
+  }
+  document.getElementById("topic-desc").textContent = topic.desc;
+  const width = Math.min(480, document.documentElement.clientWidth - 52);
+  const gallery = document.getElementById("gallery");
+  gallery.style.setProperty("--w", width + "px");
+  gallery.style.setProperty("--s", width / 800);
+  if (topic.overlay) document.getElementById("sync").checked = false;
+  for (const [id, variant] of Object.entries(topic.variants)) buildCard(gallery, id, variant);
+}
+
+function buildCard(gallery, id, variant) {
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `<h2>${id} ${variant.name}</h2><div class="desc">${variant.desc}</div>
+    <div class="frame"><iframe src="${APP_URL}"></iframe></div>
+    <div class="links"><a target="_blank" href="?thema=${topicId}&v=${id}">groß öffnen</a><a class="reload">neu laden</a></div>`;
+  gallery.appendChild(card);
+
+  const iframe = card.querySelector("iframe");
+  card.querySelector(".reload").addEventListener("click", () => iframe.contentWindow.location.reload());
+  iframe.addEventListener("load", () => {
+    inject(iframe, variant, topic.overlay);
+    gateAudio(iframe);
+    mirror(iframe);
+  });
+  frames.push(iframe);
+}
+
+// Ton nur aus dem zuletzt berührten Rahmen.
+let activeFrame = null;
+const gates = new Map();
+
+function gateAudio(frame) {
+  const win = frame.contentWindow;
+  const connect = win.AudioNode.prototype.connect;
+  win.AudioNode.prototype.connect = function (target, ...rest) {
+    if (target instanceof win.AudioDestinationNode) {
+      let gate = gates.get(frame);
+      if (!gate) {
+        gate = target.context.createGain();
+        gate.gain.value = frame === activeFrame ? 1 : 0;
+        connect.call(gate, target);
+        gates.set(frame, gate);
+      }
+      return connect.call(this, gate, ...rest);
+    }
+    return connect.call(this, target, ...rest);
+  };
+}
+
+function setActiveFrame(frame) {
+  activeFrame = frame;
+  for (const [other, gate] of gates) gate.gain.value = other === frame ? 1 : 0;
+}
+
+// Jede echte Berührung in einem Rahmen wird in allen anderen an derselben Stelle nachgespielt.
+function mirror(source) {
+  for (const type of ["pointerdown", "pointermove", "pointerup", "pointercancel"]) {
+    source.contentDocument.addEventListener(type, event => {
+      if (!event.isTrusted) return;
+      if (type === "pointerdown") setActiveFrame(source);
+      if (!document.getElementById("sync").checked) return;
+      for (const other of frames) if (other !== source) replay(other, event);
+    }, true);
+  }
+}
+
+const pressedTargets = new Map();
+
+function replay(frame, event) {
+  const doc = frame.contentDocument;
+  if (!doc) return;
+  if (!pressedTargets.has(frame)) pressedTargets.set(frame, new Map());
+  const targets = pressedTargets.get(frame);
+  let target = targets.get(event.pointerId);
+  if (event.type === "pointerdown") {
+    target = doc.elementFromPoint(event.clientX, event.clientY);
+    if (target) targets.set(event.pointerId, target);
+  }
+  if (!target) return;
+  if (event.type === "pointerup" || event.type === "pointercancel") targets.delete(event.pointerId);
+  target.dispatchEvent(new frame.contentWindow.PointerEvent(event.type, {
+    bubbles: true, cancelable: true, composed: true,
+    pointerId: event.pointerId, pointerType: event.pointerType, isPrimary: event.isPrimary,
+    clientX: event.clientX, clientY: event.clientY, screenX: event.screenX, screenY: event.screenY,
+    button: event.button, buttons: event.buttons, width: event.width, height: event.height
+  }));
+}
+</script>
+</body>
+</html>
