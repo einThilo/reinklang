@@ -1,4 +1,4 @@
-// Prototyp L10 (`?quer=drehen`): Querformat im Browser erzwingen. Ist das Fenster deutlich höher als
+// L10: Querformat im Browser erzwingen (seit 2026-11-25 Vorgabe). Ist das Fenster deutlich höher als
 // breit, wird die App um 90° im Uhrzeigersinn gedreht: Ihre Oberkante liegt dann am rechten
 // Bildschirmrand, wie beim Android-Querformat, wenn man das Handy gegen den Uhrzeigersinn dreht.
 // Die Lage des Geräts wird nicht abgefragt, es zählt nur das Seitenverhältnis des Fensters.

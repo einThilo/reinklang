@@ -30,7 +30,8 @@ document.addEventListener("DOMContentLoaded", init);
 
 function init() {
   setupLayout();
-  if (options.quer === "drehen") keepLandscape(window, document);
+  // L10: Im Hochformat wird die App gedreht (Oberkante rechts).
+  keepLandscape(window, document);
 
   const mainKeyboard = new Keyboard({
     container: document.getElementById("keyboard"),
@@ -579,7 +580,6 @@ function registerServiceWorker() {
 
 // Fullscreen-Button.
 function setupFullscreen() {
-  const appRoot = document.getElementById("app");
   const fullscreenButton = document.getElementById("fullscreen-toggle");
 
   // Z7: Als installierte App läuft die Seite schon im Vollbild (aus dem Manifest, nicht beendbar).
@@ -623,13 +623,11 @@ function setupFullscreen() {
     try {
       if (document.fullscreenElement) {
         await document.exitFullscreen();
-      } else if (document.fullscreenEnabled && options.quer === "drehen") {
+      } else if (document.fullscreenEnabled) {
         // L10: Die ganze Seite ins Vollbild, damit die Drehung von #app wirkt (der Browser hebt
         // `transform` am Vollbild-Element auf), dann das Querformat sperren, wo es geht.
         await document.documentElement.requestFullscreen();
         await lockLandscape();
-      } else if (document.fullscreenEnabled) {
-        await appRoot.requestFullscreen();
       }
     } catch (err) {
       console.error("Fullscreen failed:", err);

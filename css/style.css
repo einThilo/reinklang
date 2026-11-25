@@ -830,7 +830,7 @@ body.layout-block4 :is(button, .picker-label)::after {
 body.layout-block4 button:active::after,
 body.layout-block4 .sound-control-group:active .picker-label::after { opacity: 0.3; }
 
-/* Prototyp L10 (`?quer=drehen`, js/orientation.js): Im Hochformat wird die App gedreht, ihre Oberkante
+/* L10 (js/orientation.js): Im Hochformat wird die App gedreht, ihre Oberkante
    liegt rechts. Die Maße kommen aus dem Fenster (--win-w, --win-h), weil 100vh am Handy die Leisten
    des Browsers mitzählt. */
 body.rotated #app {
