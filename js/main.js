@@ -1,4 +1,4 @@
-import { Keyboard, clamp } from "./keyboard.js";
+import { Keyboard, clamp, touchesInside } from "./keyboard.js";
 import { HarmonyKeyboard, middleHouseChange } from "./harmony.js";
 import { INSTRUMENTS } from "./instruments.js";
 import { TUNINGS, frequencyFromState, centsFromEqual, deviationPosition, formatCents } from "./tuning.js";
@@ -72,7 +72,7 @@ function init() {
   setupHarmony(harmonyKeyboard, updateRootHighlight);
   setupInstrument(audioEngine);
   setupTuning();
-  setupSustain(synth);
+  setupSustain(synth, mainKeyboard);
   setupPitch();
   setupTranspose(mainKeyboard, harmonyKeyboard, updateRootHighlight);
   setupFullscreen();
@@ -102,6 +102,9 @@ function init() {
     window.reinklangDiagnose.report("main.js", "gestartet");
   }
 }
+
+// Ob außer Fingern noch etwas Tasten gedrückt hält (die Computertastatur, Z10); S18 lässt sie klingen.
+let otherPresses = () => false;
 
 // Unterster Ton der Grundton-Klaviatur: das (transponierte) C4; sie umfasst eine Oktave.
 function harmonyStart() {
@@ -261,9 +264,10 @@ function setupTuning() {
 }
 
 // Buttons „Sustain“ und „Release“.
-function setupSustain(synth) {
+function setupSustain(synth, mainKeyboard) {
   const btnSustain = document.getElementById("btn-sustain");
   const btnRelease = document.getElementById("btn-release");
+  const keyboardElement = document.getElementById("keyboard");
 
   function updateSustainVisual() {
     btnSustain.classList.toggle("selected", state.sustain);
@@ -271,9 +275,26 @@ function setupSustain(synth) {
 
   setupSustainPedal(synth, btnSustain, updateSustainVisual);
 
+  // S18: Liegt beim Release kein Finger auf der Hauptklaviatur, endet auch, was noch als gedrückt gilt
+  // (z. B. wenn iOS das Loslassen verschluckt hat). Liegt ein Finger dort, klingt sein Ton weiter.
+  // Bei Berührung zählt die Liste `touches` des Geräts. Sie kommt erst mit „touchstart“, nach
+  // „pointerdown“. Für Maus und Tastatur zählt die zuletzt gemeldete Liste.
+  let lastTouches = [];
+  for (const type of ["touchstart", "touchend", "touchcancel"]) {
+    document.addEventListener(type, event => { lastTouches = Array.from(event.touches); },
+      { capture: true, passive: true });
+  }
+  function releaseUnreleased(touches) {
+    if (touchesInside(touches, keyboardElement) || otherPresses()) return;
+    synth.forgetPresses();
+    mainKeyboard.forgetPointers();
+  }
+  btnRelease.addEventListener("touchstart", event => releaseUnreleased(event.touches), { passive: true });
+
   btnRelease.addEventListener("pointerdown", event => {
     event.preventDefault();
     synth.releaseAllHeldKeys();
+    if (event.pointerType !== "touch") releaseUnreleased(lastTouches);
     btnRelease.classList.add("selected");
     setTimeout(() => {
       btnRelease.classList.remove("selected");

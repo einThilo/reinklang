@@ -162,3 +162,15 @@ test("Keyboard gibt die Lage als Prozentwerte an die Tasten weiter", () => {
   assert.equal(keyboard.keyElements.get(61).style.left, ((1 - 0.45) / 2) * 100 + "%");
   assert.equal(keyboard.keyElements.get(61).style.height, undefined);
 });
+
+const { touchesInside } = await import("../js/keyboard.js");
+
+test("S18: touchesInside erkennt Berührungen, die in der Klaviatur begonnen haben", () => {
+  const key = {};
+  const button = {};
+  const keyboardElement = { contains: node => node === key };
+  assert.equal(touchesInside([{ target: key }, { target: button }], keyboardElement), true);
+  assert.equal(touchesInside([{ target: button }], keyboardElement), false);
+  assert.equal(touchesInside([], keyboardElement), false);
+  assert.equal(touchesInside(undefined, keyboardElement), false);
+});

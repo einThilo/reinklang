@@ -99,6 +99,20 @@ export class SynthController {
     if (changed) this.onNotesChanged();
   }
 
+  // Vergisst alle gedrückten Tasten, als wären sie losgelassen worden (S18, S19): für Finger, deren
+  // Loslassen nie ankam. Gehaltene Töne klingen weiter, ein getretenes Pedal bleibt mit seinen Tönen.
+  forgetPresses() {
+    let changed = false;
+    for (let midi = 0; midi < 128; midi++) {
+      if (this.physicalPresses[midi] === 0 && !this.spielMode[midi]) continue;
+      this.physicalPresses[midi] = 0;
+      if (!this.pedalNotes.has(midi)) this.spielMode[midi] = false;
+      if (this.evaluateNoteStateInternal(midi)) changed = true;
+      this.updateKeyboardVisuals(midi);
+    }
+    if (changed) this.onNotesChanged();
+  }
+
   handlePointerEvent(type, midi) {
     if (type === "down") {
       let trigger;

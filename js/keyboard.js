@@ -114,6 +114,7 @@ export class Keyboard {
     this.rootElement.style.touchAction = "none";
 
     const pointerToMidi = new Map();
+    this.pointerToMidi = pointerToMidi;
 
     const emit = (type, midi, pointerId) => {
       callback({
@@ -185,6 +186,20 @@ export class Keyboard {
     this.rootElement.addEventListener("lostpointercapture", finish);
   }
 
+  // Vergisst alle Finger, ohne „Loslassen“ zu melden (S18, S19): für Finger, deren Loslassen nie
+  // ankam. Ein späteres Bewegen oder Loslassen dieser Finger bewirkt nichts mehr.
+  forgetPointers() {
+    if (!this.pointerToMidi) return;
+    const pointerIds = Array.from(this.pointerToMidi.keys());
+    // Erst leeren: Das Freigeben löst „lostpointercapture“ aus, das sonst „Loslassen“ meldete.
+    this.pointerToMidi.clear();
+    for (const pointerId of pointerIds) {
+      try {
+        this.rootElement.releasePointerCapture(pointerId);
+      } catch {}
+    }
+  }
+
   setHeldState(midi, held) {
     if (held) this.heldMidis.add(midi);
     else this.heldMidis.delete(midi);
@@ -230,4 +245,10 @@ export function keyPositions(keys, cutEdgeKeys = false) {
 
 export function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+// Ob eine der Berührungen (TouchList oder Liste) in `element` begonnen hat (S18). Die Liste `touches`
+// eines Touch-Ereignisses kommt vom Gerät und stimmt auch dann, wenn ein Loslassen nie gemeldet wurde.
+export function touchesInside(touches, element) {
+  return Array.from(touches ?? []).some(touch => element.contains(touch.target));
 }

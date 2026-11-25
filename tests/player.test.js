@@ -472,3 +472,42 @@ test("onHeldChanged meldet gehaltene Tasten nur bei Änderung; Pedal-Töne zähl
   synth.releaseAllHeldKeys();
   assert.deepEqual(reports, [true, false]);
 });
+
+// --- S18, S19: Töne beenden, deren Loslassen nie ankam ---
+
+test("S18: forgetPresses beendet gedrückte Töne, auch Spielstimmen, gehaltene klingen weiter", () => {
+  const { synth, log, active } = createSynth();
+  synth.handlePointerEvent("down", 60);
+  synth.handlePointerEvent("down", 60);        // zweiter Finger, ebenfalls nie losgelassen
+  synth.handlePointerEvent("down", 64);
+  synth.pedalDown();
+  synth.pedalUp();                              // „hold“: 60 und 64 werden gehalten
+  synth.handlePointerEvent("down", 64);        // Spielstimme auf gehaltener Taste
+  synth.handlePointerEvent("down", 67);
+  log.length = 0;
+
+  synth.forgetPresses();
+
+  assert.deepEqual(log, [["noteOff", 64, "spiel"], ["noteOff", 67]]);
+  assert.deepEqual([...synth.activeNotes].sort(), [60, 64]);
+  assert.equal(active.get(67), false);
+  assert.equal(active.get(60), false);
+
+  // Ein spätes Loslassen bewirkt nichts mehr, ein neuer Druck spielt normal.
+  synth.handlePointerEvent("up", 67);
+  synth.handlePointerEvent("down", 67);
+  synth.handlePointerEvent("up", 67);
+  assert.deepEqual(log.slice(2), [["noteOn", 67, 670], ["noteOff", 67]]);
+});
+
+test("S18: forgetPresses lässt ein getretenes Pedal in Ruhe", () => {
+  const { synth, log } = createSynth();
+  synth.pedalDown();
+  synth.handlePointerEvent("down", 60);
+  synth.handlePointerEvent("up", 60);          // Pedal-Ton
+  log.length = 0;
+  synth.forgetPresses();
+  assert.deepEqual(log, []);
+  synth.pedalUp();
+  assert.deepEqual(log, [["noteOff", 60]]);
+});
