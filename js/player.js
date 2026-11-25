@@ -113,6 +113,27 @@ export class SynthController {
     if (changed) this.onNotesChanged();
   }
 
+  // Beendet alles, was klingt: gedrückte, gehaltene und Pedal-Töne (S19, Seite verborgen).
+  // Sustain bleibt, wie es ist; ein getretenes Pedal gilt als losgelassen.
+  stopAll() {
+    this.pedalActive = false;
+    this.pedalUsed = false;
+    const pedalNotes = Array.from(this.pedalNotes);
+    this.pedalNotes.clear();
+    let changed = false;
+    for (let midi = 0; midi < 128; midi++) {
+      const touched = this.physicalPresses[midi] > 0 || this.isHeld[midi] || this.spielMode[midi] ||
+        pedalNotes.includes(midi);
+      if (!touched) continue;
+      this.physicalPresses[midi] = 0;
+      this.isHeld[midi] = false;
+      this.spielMode[midi] = false;
+      if (this.evaluateNoteStateInternal(midi)) changed = true;
+      this.updateKeyboardVisuals(midi);
+    }
+    if (changed) this.onNotesChanged();
+  }
+
   handlePointerEvent(type, midi) {
     if (type === "down") {
       let trigger;

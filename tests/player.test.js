@@ -511,3 +511,31 @@ test("S18: forgetPresses lässt ein getretenes Pedal in Ruhe", () => {
   synth.pedalUp();
   assert.deepEqual(log, [["noteOff", 60]]);
 });
+
+test("S19: stopAll beendet gedrückte, gehaltene und Pedal-Töne und meldet einmal", () => {
+  const { synth, log, held } = createSynth();
+  let changes = 0;
+  synth.onNotesChanged = () => changes++;
+  synth.handlePointerEvent("down", 60);
+  synth.pedalDown();
+  synth.pedalUp();                              // 60 gehalten
+  synth.handlePointerEvent("up", 60);
+  synth.pedalDown();
+  synth.handlePointerEvent("down", 64);        // Pedal-Ton, noch gedrückt
+  synth.handlePointerEvent("down", 67);
+  log.length = 0;
+  changes = 0;
+
+  synth.stopAll();
+
+  assert.deepEqual(log.map(entry => entry[1]).sort(), [60, 64, 67]);
+  assert.deepEqual([...synth.activeNotes], []);
+  assert.equal(synth.pedalActive, false);
+  assert.equal(synth.hasHeldKeys(), false);
+  assert.equal(held.get(60), false);
+  assert.equal(changes, 1);
+
+  // Das Loslassen des Pedals danach ändert nichts mehr.
+  assert.equal(synth.pedalUp(), "toggle");
+  assert.deepEqual(log.length, 3);
+});

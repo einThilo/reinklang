@@ -40,6 +40,8 @@ class FakeAudioContext {
     return node({ threshold: param(), knee: param(), ratio: param(), attack: param(), release: param() });
   }
   createPeriodicWave() { return {}; }
+  suspend() { this.state = "suspended"; }
+  resume() { this.state = "running"; }
 }
 globalThis.window = { AudioContext: FakeAudioContext };
 
@@ -237,4 +239,34 @@ test("Wellenform: innerhalb eines Halbtons wiederverwendet, bei anderer Tonhöhe
   assert.equal(waveOf(261.63), at261);
   assert.equal(waveOf(264), at261);          // rein gestimmt, wenige Cent daneben
   assert.notEqual(waveOf(130.81), at261);    // Stimmton 220 statt 440: eine Oktave tiefer
+});
+
+test("S19: silence blendet aus, beendet alle Stimmen und hält den Klang an; ensureStarted setzt fort", () => {
+  const engine = makeEngine();
+  engine.noteOn(60, 261);
+  engine.noteOn(64, 329, "spiel");
+  const voices = [engine.voiceAt(60), engine.voiceAt(64, "spiel")];
+
+  engine.silence();
+  assert.deepEqual(engine.master.gain.calls.at(-1), ["linearRampToValueAtTime", 0, 0.05]);
+  engine.run();
+
+  assert.ok(voices.every(voice => voice.finished && voice.osc.stopped !== null));
+  assert.equal(engine.voiceAt(60), undefined);
+  assert.equal(engine.ctx.state, "suspended");
+  assert.equal(engine.master.gain.value, 0.3);
+
+  engine.ensureStarted();
+  assert.equal(engine.ctx.state, "running");
+});
+
+test("S19: ein Anschlag vor dem Anhalten bricht silence ab", () => {
+  const engine = makeEngine();
+  engine.noteOn(60, 261);
+  engine.silence();
+  engine.noteOn(62, 293);
+  engine.run();
+  assert.equal(engine.ctx.state, "running");
+  assert.ok(engine.voiceAt(62));
+  assert.deepEqual(engine.master.gain.calls.at(-1), ["setValueAtTime", 0.3, 0]);
 });

@@ -2,6 +2,7 @@ import { INSTRUMENTS } from "./instruments.js";
 
 const MAX_HARMONIC = 128;
 const MIN_GAIN = 0.001;
+const MASTER_GAIN = 0.3;
 
 function interpolateKeyframes(freq, keyframes) {
   const freqs = Object.keys(keyframes).map(Number).sort((a, b) => a - b);
@@ -128,7 +129,7 @@ export class AudioEngine {
       this.ctx = new AudioContextCtor();
 
       this.master = this.ctx.createGain();
-      this.master.gain.value = 0.3;
+      this.master.gain.value = MASTER_GAIN;
 
       this.limiter = this.ctx.createDynamicsCompressor();
       this.limiter.threshold.value = -24.0;
@@ -141,9 +142,53 @@ export class AudioEngine {
       this.limiter.connect(this.ctx.destination);
     }
 
+    // Ein Anschlag während `silence` bricht das Anhalten ab (S19).
+    if (this.silencing) {
+      this.silencing = null;
+      this.restoreMaster();
+    }
+
     if (this.ctx.state === "suspended") {
       this.ctx.resume();
     }
+  }
+
+  restoreMaster() {
+    const g = this.master.gain;
+    g.cancelScheduledValues(0);
+    g.value = MASTER_GAIN;
+    g.setValueAtTime(MASTER_GAIN, this.ctx.currentTime);
+  }
+
+  // S19 (Seite verborgen): blendet in 50 ms aus, beendet danach alle Stimmen sofort und hält die
+  // Klangerzeugung an, damit nichts weiterspielt und keine Mediensteuerung bleibt. Der nächste Anschlag
+  // (`ensureStarted`) setzt sie fort.
+  silence() {
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    const g = this.master.gain;
+    g.cancelScheduledValues(t);
+    g.setValueAtTime(g.value, t);
+    g.linearRampToValueAtTime(0, t + 0.05);
+
+    const token = {};
+    this.silencing = token;
+    this.schedule(() => {
+      if (this.silencing !== token) return;
+      this.silencing = null;
+      for (const slots of this.voices.values()) {
+        for (const platz of PLAETZE) {
+          const voice = slots[platz];
+          if (!voice || voice.finished) continue;
+          voice.finished = true;
+          voice.osc.stop();
+          voice.gain.disconnect();
+        }
+      }
+      this.voices.clear();
+      this.restoreMaster();
+      this.ctx.suspend();
+    }, 80);
   }
 
   // Wirkt nur auf neue Stimmen; klingende behalten ihr Instrument (K6).

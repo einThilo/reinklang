@@ -72,11 +72,13 @@ function init() {
   setupHarmony(harmonyKeyboard, updateRootHighlight);
   setupInstrument(audioEngine);
   setupTuning();
-  setupSustain(synth, mainKeyboard);
+  const cancelPedal = setupSustain(synth, mainKeyboard);
   setupPitch();
   setupTranspose(mainKeyboard, harmonyKeyboard, updateRootHighlight);
   setupFullscreen();
   setupDeviation(harmonyKeyboard);
+
+  setupStopWhenHidden(synth, mainKeyboard, audioEngine, cancelPedal);
 
   setupStartOverlay(audioEngine);
   registerServiceWorker();
@@ -105,6 +107,7 @@ function init() {
 
 // Ob außer Fingern noch etwas Tasten gedrückt hält (die Computertastatur, Z10); S18 lässt sie klingen.
 let otherPresses = () => false;
+let forgetOtherPresses = () => {};
 
 // Unterster Ton der Grundton-Klaviatur: das (transponierte) C4; sie umfasst eine Oktave.
 function harmonyStart() {
@@ -273,7 +276,7 @@ function setupSustain(synth, mainKeyboard) {
     btnSustain.classList.toggle("selected", state.sustain);
   }
 
-  setupSustainPedal(synth, btnSustain, updateSustainVisual);
+  const cancelPedal = setupSustainPedal(synth, btnSustain, updateSustainVisual);
 
   // S18: Liegt beim Release kein Finger auf der Hauptklaviatur, endet auch, was noch als gedrückt gilt
   // (z. B. wenn iOS das Loslassen verschluckt hat). Liegt ein Finger dort, klingt sein Ton weiter.
@@ -309,6 +312,7 @@ function setupSustain(synth, mainKeyboard) {
     updateSustainVisual();
   });
   updateSustainVisual();
+  return cancelPedal;
 }
 
 // Der Sustain-Button wirkt als Pedal, solange er gedrückt ist (W4.2). Ändert sich währenddessen kein
@@ -337,6 +341,37 @@ function setupSustainPedal(synth, btnSustain, updateSustainVisual) {
   };
   btnSustain.addEventListener("pointerup", release);
   btnSustain.addEventListener("pointercancel", release);
+
+  // Vergisst ein getretenes Pedal, ohne dass sein Loslassen etwas bewirkt (S19).
+  return () => {
+    if (pedalPointer === null) return;
+    try {
+      btnSustain.releasePointerCapture(pedalPointer);
+    } catch {}
+    pedalPointer = null;
+    updateSustainVisual();
+  };
+}
+
+// S19: Ist die Seite verborgen (Bildschirm aus, andere App, Tab im Hintergrund), endet alles, was klingt,
+// gedrückte und gehaltene Tasten sind zurückgesetzt, Sustain bleibt, wie es war. Die Klangerzeugung hält an,
+// damit keine Mediensteuerung bleibt; der nächste Anschlag setzt sie fort.
+// Verliert das Fenster nur den Fokus, enden die Töne gedrückter Tasten, deren Loslassen nicht mehr ankommt;
+// gehaltene klingen weiter.
+function setupStopWhenHidden(synth, mainKeyboard, audioEngine, cancelPedal) {
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "hidden") return;
+    cancelPedal();
+    synth.stopAll();
+    mainKeyboard.forgetPointers();
+    forgetOtherPresses();
+    audioEngine.silence();
+  });
+  window.addEventListener("blur", () => {
+    synth.forgetPresses();
+    mainKeyboard.forgetPointers();
+    forgetOtherPresses();
+  });
 }
 
 // Stimmton: Zahlenfeld und +/−.
