@@ -8,7 +8,8 @@ const BUILT_IN_LINES = {
   thilo: "Thilo | 17/16 9/8 6/5 5/4 4/3 7/5 3/2 8/5 5/3 7/4 15/8 2/1",
   liligetia: "Liligetia | 17/16 9/8 6/5 5/4 11/8 7/5 12/8 8/5 13/8 7/4 15/8 2/1",
   // Nur auf dem Test-Branch zum Ausprobieren der Oktave ≠ 2 (Z3.7), vor dem Übernehmen nach main entfernen.
-  testStretched: "Test gestreckt | 17/16 9/8 6/5 5/4 4/3 7/5 3/2 8/5 5/3 7/4 15/8 3/1"
+  // Die Cent-Werte von Thilo mal log2(3), gestreckt wie die Oktave 3/1.
+  testStretched: "Test gestreckt | 166.35 323.19 500.28 612.29 789.38 923.26 1112.57 1289.66 1401.68 1535.55 1724.87 3/1"
 };
 
 const NAME_PATTERN = /^[\p{L}\p{N} \-_.,()+'#]{1,40}$/u;

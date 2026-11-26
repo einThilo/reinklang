@@ -172,13 +172,17 @@ test("formatCents: ganze Cent mit Vorzeichen", () => {
   assert.equal(formatCents(-0.3), "0");
 });
 
-// Z3.7: Oktavverhältnis aus der Stimmung. „Test gestreckt“ = Werte von Thilo mit Oktave 3/1.
+// Z3.7: Oktavverhältnis aus der Stimmung. „Test gestreckt“ = Thilo, gestreckt auf die Oktave 3/1.
 const stretched = { a4Frequency: 440, tuningMode: "testStretched", useTuning: true, rootMidi: 62 };
 const stretchedEqual = (midi) => 440 * Math.pow(3, (midi - 69) / 12);
 
-test("Test gestreckt: Werte von Thilo, Oktave 3/1", () => {
+test("Test gestreckt: jede Stufe von Thilo im Maß der Oktave 3/1 gestreckt", () => {
   assert.equal(TUNINGS.testStretched.name, "Test gestreckt");
-  assert.deepEqual(TUNINGS.testStretched.values, [...TUNINGS.thilo.values.slice(0, 11), "3/1"]);
+  TUNINGS.thilo.ratios.forEach((ratio, degree) => {
+    const expected = Math.pow(ratio, Math.log2(3));
+    const actual = TUNINGS.testStretched.ratios[degree];
+    assert.ok(Math.abs(actual - expected) < 1e-5 * expected, `Grad ${degree}: ${actual} statt ${expected}`);
+  });
 });
 
 test("Oktave ≠ 2: A4 bleibt beim Stimmton, Grundton liegt gleichstufig mit der Oktave der Stimmung", () => {
@@ -189,10 +193,11 @@ test("Oktave ≠ 2: A4 bleibt beim Stimmton, Grundton liegt gleichstufig mit der
 
 test("Oktave ≠ 2: Ton = Grundton · Wert · Oktave^k", () => {
   const root = stretchedEqual(62);
-  assertClose(frequencyFromState(66, stretched), root * 5 / 4);
+  const ratios = TUNINGS.testStretched.ratios;
+  assertClose(frequencyFromState(66, stretched), root * ratios[4]);
   assertClose(frequencyFromState(74, stretched), root * 3);
-  assertClose(frequencyFromState(78, stretched), root * 5 / 4 * 3);
-  assertClose(frequencyFromState(61, stretched), root * 15 / 8 / 3);
+  assertClose(frequencyFromState(78, stretched), root * ratios[4] * 3);
+  assertClose(frequencyFromState(61, stretched), root * ratios[11] / 3);
   assertClose(frequencyFromState(50, stretched), root / 3);
 });
 
@@ -200,7 +205,7 @@ test("Oktave ≠ 2: Abweichung gegenüber gleichstufig mit derselben Oktave", ()
   const close = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-6, `${actual} statt ${expected}`);
   close(centsFromEqual(62, stretched), 0);
   close(centsFromEqual(74, stretched), 0);
-  close(centsFromEqual(66, stretched), 1200 * Math.log2(5 / 4) - 1200 * Math.log2(3) * 4 / 12);
+  close(centsFromEqual(66, stretched), 612.29 - 1200 * Math.log2(3) * 4 / 12);
 });
 
 test("Tuning aus: gleichstufig mit Oktave 2, auch wenn die Stimmung eine andere Oktave hat", () => {
