@@ -27,6 +27,7 @@ const FILES = [
   "js/state.js",
   "js/steps.js",
   "js/tuning.js",
+  "js/tuningeditor.js",
   "js/version.js",
   "js/wakelock.js",
   "js/zoom.js",

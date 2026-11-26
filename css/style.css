@@ -724,3 +724,39 @@ body.rotated #app {
   transform-origin: top left;
   transform: translateX(var(--win-w)) rotate(90deg);
 }
+
+/* ============================================================
+   Stimmung anpassen (Z3.4). Die Häuser schrumpfen etwas, damit sichtbar ist, dass ein Tipp jetzt den Ton
+   des Hauses ändert (Vergleich mit Wackeln: Idee in Z12). Das gewählte Haus ist hell türkis.
+   Das Anpass-Feld überdeckt Tastenbereich, Transposition und Stimmton.
+   ============================================================ */
+#harmony-keyboard .house { transition: transform 0.2s; }
+#harmony-keyboard.editing .house { transform: scale(0.88); }
+body.layout-block4 #harmony-keyboard .key.house.edit-selected,
+#harmony-keyboard .key.edit-selected { background: #bfeaea; }
+#harmony-keyboard .key.edit-selected .deviation-value { color: #0a2d2d; font-weight: bold; }
+#harmony-keyboard .key.edit-selected .deviation-marker { background: #0a2d2d; opacity: 0.5; }
+
+#tuning-editor {
+  grid-area: 1 / 4 / 6 / 8;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 10%;
+  padding: 4% 6%;
+  box-sizing: border-box;
+  background: #141517;
+  box-shadow: inset 0 0 0 1px #000;
+  color: #ccc;
+  font-size: clamp(11px, 3vmin, 18px);
+  text-align: center;
+}
+#tuning-editor[hidden] { display: none; }
+#tuning-editor p { margin: 0; }
+body.layout-block4 #tuning-editor-done {
+  --c: var(--st);
+  flex: 0 0 30%;
+  font-size: inherit;
+}

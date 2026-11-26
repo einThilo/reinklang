@@ -1,7 +1,7 @@
 import { Keyboard, clamp, touchesInside } from "./keyboard.js";
 import { HarmonyKeyboard, middleHouseChange } from "./harmony.js";
 import { INSTRUMENTS } from "./instruments.js";
-import { TUNINGS, frequencyFromState, centsFromEqual, deviationPosition, formatCents } from "./tuning.js";
+import { findTuning, frequencyFromState, centsFromEqual, deviationPosition, formatCents } from "./tuning.js";
 import { AudioEngine } from "./audio.js";
 import { SynthController, connectAutoRoot } from "./player.js";
 import { state, setState, setStates, onStateChange, LIMITS } from "./state.js";
@@ -14,6 +14,7 @@ import { undoZoom } from "./zoom.js";
 import { keepLandscape, lockLandscape } from "./orientation.js";
 import { VERSION } from "./version.js";
 import { markSelected } from "./selectlist.js";
+import { setupTuningEditor, tuningListEntries, ADJUST_ENTRY } from "./tuningeditor.js";
 
 // Schalter für Prototypen (?name=wert), siehe options.js.
 const options = readOptions(location.search);
@@ -56,7 +57,7 @@ function init() {
   synth.setSustainEnabled(state.sustain);
   connectAutoRoot(synth);
 
-  onStateChange(["rootMidi", "tuningMode", "useTuning", "a4Frequency"], () => {
+  onStateChange(["rootMidi", "tuningMode", "customTunings", "useTuning", "a4Frequency"], () => {
     audioEngine.retuneAllVoices(frequencyOf);
   });
 
@@ -75,9 +76,13 @@ function init() {
   }
 
   setupKeyboardRange(mainKeyboard);
-  setupHarmony(harmonyKeyboard, updateRootHighlight);
+  const tuningEditor = setupTuningEditor({
+    harmonyKeyboard,
+    panel: document.getElementById("tuning-editor")
+  });
+  setupHarmony(harmonyKeyboard, updateRootHighlight, tuningEditor);
   setupInstrument(audioEngine);
-  setupTuning();
+  setupTuning(tuningEditor);
   const sustain = setupSustain(synth, mainKeyboard);
   setupComputerKeyboard(mainKeyboard, synth, audioEngine, sustain);
   setupPitch();
@@ -193,7 +198,8 @@ const SPECIAL_HOUSES = {
   middle: { label: "Stimmung aus", mode: null }
 };
 
-function setupHarmony(harmonyKeyboard, updateRootHighlight) {
+// Beim Stimmung-Anpassen (Z3.4) wählt ein Tonhaus den Grad, die Sonderhäuser reagieren nicht.
+function setupHarmony(harmonyKeyboard, updateRootHighlight, tuningEditor) {
   for (const [name, { label }] of Object.entries(SPECIAL_HOUSES)) {
     const labelElement = document.createElement("span");
     labelElement.className = "special-label";
@@ -214,8 +220,12 @@ function setupHarmony(harmonyKeyboard, updateRootHighlight) {
   onStateChange(["useTuning"], (key, value) => { if (value) tuningWasOn = true; });
 
   harmonyKeyboard.onPress(
-    midi => setStates({ harmonyMode: "manual", rootMidi: midi, useTuning: true }),
+    midi => {
+      if (tuningEditor.isEditing()) tuningEditor.pressHouse(midi);
+      else setStates({ harmonyMode: "manual", rootMidi: midi, useTuning: true });
+    },
     name => {
+      if (tuningEditor.isEditing()) return;
       const { mode } = SPECIAL_HOUSES[name];
       if (mode) setStates({ harmonyMode: mode, useTuning: true });
       else {
@@ -263,17 +273,22 @@ function setupInstrument(audioEngine) {
   showName();
 }
 
-// Auswahlliste für die Stimmung.
-function setupTuning() {
+// Auswahlliste für die Stimmung: eigene Stimmungen oben, am Ende „Stimmung anpassen“ (Z3.4).
+function setupTuning(tuningEditor) {
   const tuningSelect = document.getElementById("tuning-select");
+  let tuningNames = {};
 
-  Object.entries(TUNINGS).forEach(([key, tuning]) => {
-    const option = document.createElement("option");
-    option.value = key;
-    option.textContent = tuning.name;
-    tuningSelect.appendChild(option);
-  });
-  const tuningNames = Object.fromEntries(Object.entries(TUNINGS).map(([key, tuning]) => [key, tuning.name]));
+  function buildOptions() {
+    tuningSelect.replaceChildren();
+    const entries = tuningListEntries(state.customTunings);
+    for (const { value, name } of entries) {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = name;
+      tuningSelect.appendChild(option);
+    }
+    tuningNames = Object.fromEntries(entries.map(({ value, name }) => [value, name]));
+  }
 
   // Z12.2: Die Beschriftung zeigt den gewählten Namen und ist grau, solange das Tuning aus ist.
   const tuningGroup = document.getElementById("tuning");
@@ -281,15 +296,25 @@ function setupTuning() {
   function updateTuningControls() {
     tuningSelect.value = state.tuningMode;
     markSelected(tuningSelect, state.tuningMode, tuningNames);
-    nameLabel.textContent = TUNINGS[state.tuningMode]?.name ?? "";
+    nameLabel.textContent = findTuning(state.tuningMode, state.customTunings)?.name ?? "";
     tuningGroup.classList.toggle("inactive", !state.useTuning);
   }
 
   tuningSelect.addEventListener("change", () => {
-    setState("tuningMode", tuningSelect.value);
+    if (tuningSelect.value === ADJUST_ENTRY) {
+      tuningSelect.value = state.tuningMode;
+      tuningEditor.start();
+    } else {
+      setState("tuningMode", tuningSelect.value);
+    }
   });
 
+  onStateChange(["customTunings"], () => {
+    buildOptions();
+    updateTuningControls();
+  });
   onStateChange(["tuningMode", "useTuning"], updateTuningControls);
+  buildOptions();
   updateTuningControls();
 }
 
@@ -582,7 +607,7 @@ function setupDeviation(harmonyKeyboard) {
     }
   }
 
-  onStateChange(["rootMidi", "tuningMode", "useTuning", "transpose"], renderDeviations);
+  onStateChange(["rootMidi", "tuningMode", "customTunings", "useTuning", "transpose"], renderDeviations);
   renderDeviations();
 }
 
