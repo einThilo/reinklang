@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { TUNINGS, midiToFrequency, frequencyFromState, centsFromEqual, deviationPosition, formatCents } from "../js/tuning.js";
+import { TUNINGS, parseTuningLine, formatTuningLine, parseTuningText, midiToFrequency, frequencyFromState, centsFromEqual, deviationPosition, formatCents } from "../js/tuning.js";
 
 function assertClose(actual, expected) {
   assert.ok(Math.abs(actual - expected) < 1e-9 * expected, `${actual} statt ${expected}`);
@@ -51,16 +51,86 @@ test("Wechsel des Grundtons verschiebt die Intervalle", () => {
   assertClose(midiToFrequency(60, settings), f4 * (3 / 2) / 2);
 });
 
-test("jede Stimmung außer der gleichstufigen hat 12 Verhältnisse und beginnt mit 1", () => {
+test("jede fest hinterlegte Stimmung hat einen Namen, 12 Werte und die Oktave 2", () => {
   for (const [key, tuning] of Object.entries(TUNINGS)) {
     assert.equal(typeof tuning.name, "string", key);
-    if (key === "equal") {
-      assert.equal(tuning.ratios, null);
-      continue;
-    }
-    assert.equal(tuning.ratios.length, 12, key);
+    assert.equal(tuning.values.length, 12, key);
+    assert.equal(tuning.ratios.length, 13, key);
     assert.equal(tuning.ratios[0], 1, key);
+    assertClose(tuning.ratios[12], 2);
   }
+});
+
+test("fest hinterlegte Stimmungen klingen wie vor Z3.1", () => {
+  const before = {
+    just7Tri: [1, 16 / 15, 9 / 8, 6 / 5, 5 / 4, 4 / 3, 7 / 5, 3 / 2, 8 / 5, 5 / 3, 9 / 5, 15 / 8],
+    justHarmonicCarlos: [1, 17 / 16, 9 / 8, 19 / 16, 5 / 4, 21 / 16, 11 / 8, 3 / 2, 13 / 8, 27 / 16, 7 / 4, 15 / 8],
+    justSuperCarlos: [1, 17 / 16, 9 / 8, 6 / 5, 5 / 4, 4 / 3, 11 / 8, 3 / 2, 13 / 8, 5 / 3, 7 / 4, 15 / 8],
+    thilo: [1, 17 / 16, 9 / 8, 6 / 5, 5 / 4, 4 / 3, 7 / 5, 3 / 2, 8 / 5, 5 / 3, 7 / 4, 15 / 8],
+    liligetia: [1, 17 / 16, 9 / 8, 6 / 5, 5 / 4, 11 / 8, 7 / 5, 12 / 8, 8 / 5, 13 / 8, 7 / 4, 15 / 8]
+  };
+  assert.deepEqual(Object.keys(TUNINGS), ["equal", ...Object.keys(before)]);
+  for (const [key, ratios] of Object.entries(before)) {
+    for (let midi = 40; midi < 90; midi++) {
+      const settings = { tuningMode: key, a4Frequency: 440, tuningRootMidi: 62 };
+      const diff = midi - 62;
+      const expected = midiToFrequency(62, equal) * ratios[((diff % 12) + 12) % 12] * Math.pow(2, Math.floor(diff / 12));
+      assertClose(midiToFrequency(midi, settings), expected);
+    }
+  }
+  for (let midi = 40; midi < 90; midi++) {
+    assertClose(midiToFrequency(midi, { ...equal, tuningRootMidi: 63 }), 440 * Math.pow(2, (midi - 69) / 12));
+  }
+});
+
+test("parseTuningLine: Verhältnisse und Cent-Werte", () => {
+  const tuning = parseTuningLine("  Probe (2) | 17/16 9/8  6/5 5/4 4/3 7/5 3/2 8/5 5/3 7/4 1088.27 2 ");
+  assert.equal(tuning.name, "Probe (2)");
+  assert.deepEqual(tuning.values, ["17/16", "9/8", "6/5", "5/4", "4/3", "7/5", "3/2", "8/5", "5/3", "7/4", "1088.27", "2"]);
+  assertClose(tuning.ratios[1], 17 / 16);
+  assertClose(tuning.ratios[11], Math.pow(2, 1088.27 / 1200));
+  assert.equal(tuning.ratios[12], 2);
+  assertClose(parseTuningLine("Ä | 100. 200.0 300.0 400.0 500.0 600.0 700.0 800.0 900.0 1000.0 -1.5 1200.0").ratios[11],
+    Math.pow(2, -1.5 / 1200));
+});
+
+test("formatTuningLine: geschrieben und wieder gelesen ergibt dieselbe Stimmung", () => {
+  for (const tuning of Object.values(TUNINGS)) {
+    assert.deepEqual(parseTuningLine(formatTuningLine(tuning)), tuning);
+  }
+  assert.equal(formatTuningLine(TUNINGS.thilo), "Thilo | 17/16 9/8 6/5 5/4 4/3 7/5 3/2 8/5 5/3 7/4 15/8 2/1");
+});
+
+test("parseTuningLine: nicht lesbare Zeilen geben eine Meldung", () => {
+  const values = "17/16 9/8 6/5 5/4 4/3 7/5 3/2 8/5 5/3 7/4 15/8";
+  const bad = [
+    `Ohne Trenner ${values} 2/1`,
+    `A | B | ${values} 2/1`,
+    ` | ${values} 2/1`,
+    `<b>x</b> | ${values} 2/1`,
+    `${"x".repeat(41)} | ${values} 2/1`,
+    `Zu wenig | ${values}`,
+    `Zu viel | ${values} 2/1 3/1`,
+    `Buchstabe | ${values} zwei`,
+    `Null | ${values.replace("9/8", "0/8")} 2/1`,
+    `Durch null | ${values.replace("9/8", "9/0")} 2/1`,
+    `Oktave | ${values} 1/1`,
+    `Oktave Cent | ${values} -5.0`
+  ];
+  for (const line of bad) {
+    const result = parseTuningLine(line);
+    assert.equal(typeof result.error, "string", line);
+    assert.equal(result.name, undefined, line);
+  }
+});
+
+test("parseTuningText: eine Stimmung je Zeile, leere Zeilen zählen nicht", () => {
+  const text = `${formatTuningLine(TUNINGS.thilo)}\n\n  \r\nKaputt | 1/1\n${formatTuningLine(TUNINGS.equal)}\n`;
+  const results = parseTuningText(text);
+  assert.equal(results.length, 3);
+  assert.deepEqual(results[0], TUNINGS.thilo);
+  assert.equal(typeof results[1].error, "string");
+  assert.deepEqual(results[2], TUNINGS.equal);
 });
 
 test("frequencyFromState: ohne Use tuning gleichstufig, mit Use tuning die gewählte Stimmung zum Grundton", () => {

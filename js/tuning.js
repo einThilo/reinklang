@@ -1,33 +1,63 @@
-export const TUNINGS = {
-  equal: {
-    name: "Equal Temperament",
-    ratios: null
-  },
-  just7Tri: {
-    name: "Just 7 Tri",
-    ratios: [1, 16 / 15, 9 / 8, 6 / 5, 5 / 4, 4 / 3, 7 / 5, 3 / 2, 8 / 5, 5 / 3, 9 / 5, 15 / 8]
-  },
-  justHarmonicCarlos: {
-    name: "Just Harmonic Carlos",
-    ratios: [1, 17 / 16, 9 / 8, 19 / 16, 5 / 4, 21 / 16, 11 / 8, 3 / 2, 13 / 8, 27 / 16, 7 / 4, 15 / 8]
-  },
-  justSuperCarlos: {
-    name: "Just Super Carlos",
-    ratios: [1, 17 / 16, 9 / 8, 6 / 5, 5 / 4, 4 / 3, 11 / 8, 3 / 2, 13 / 8, 5 / 3, 7 / 4, 15 / 8]
-  },
-  thilo: {
-    name: "Thilo",
-    ratios: [1, 17 / 16, 9 / 8, 6 / 5, 5 / 4, 4 / 3, 7 / 5, 3 / 2, 8 / 5, 5 / 3, 7 / 4, 15 / 8]
-  },
-  liligetia: {
-    name: "Liligetia",
-    ratios: [1, 17 / 16, 9 / 8, 6 / 5, 5 / 4, 11 / 8, 7 / 5, 12 / 8, 8 / 5, 13 / 8, 7 / 4, 15 / 8]
-  }
+// Eine Stimmung als Textzeile (regeln/stimmung.md): `Name | Wert … Wert`, 12 Werte für die Grade 1 bis 12.
+// Ein Wert ist ein Verhältnis (`5/4`, `2`) oder, mit Dezimalpunkt, ein Cent-Wert (`386.31`). Grad 12 ist die Oktave.
+const BUILT_IN_LINES = {
+  equal: "Equal Temperament | 100.0 200.0 300.0 400.0 500.0 600.0 700.0 800.0 900.0 1000.0 1100.0 1200.0",
+  just7Tri: "Just 7 Tri | 16/15 9/8 6/5 5/4 4/3 7/5 3/2 8/5 5/3 9/5 15/8 2/1",
+  justHarmonicCarlos: "Just Harmonic Carlos | 17/16 9/8 19/16 5/4 21/16 11/8 3/2 13/8 27/16 7/4 15/8 2/1",
+  justSuperCarlos: "Just Super Carlos | 17/16 9/8 6/5 5/4 4/3 11/8 3/2 13/8 5/3 7/4 15/8 2/1",
+  thilo: "Thilo | 17/16 9/8 6/5 5/4 4/3 7/5 3/2 8/5 5/3 7/4 15/8 2/1",
+  liligetia: "Liligetia | 17/16 9/8 6/5 5/4 11/8 7/5 12/8 8/5 13/8 7/4 15/8 2/1"
 };
+
+const NAME_PATTERN = /^[\p{L}\p{N} \-_.,()+'#]{1,40}$/u;
+
+// Ein Wert als Frequenzverhältnis, oder null, wenn er nicht lesbar ist.
+function parseValue(text) {
+  if (/^-?(\d+\.\d*|\.\d+)$/.test(text)) return Math.pow(2, Number(text) / 1200);
+  const match = /^(\d+)(?:\/(\d+))?$/.exec(text);
+  if (!match) return null;
+  const ratio = Number(match[1]) / Number(match[2] ?? 1);
+  return ratio > 0 && Number.isFinite(ratio) ? ratio : null;
+}
+
+// Liest eine Zeile. Ergebnis: `{ name, values, ratios }` oder `{ error }`.
+// `values` sind die 12 Werte als Text, `ratios` die Verhältnisse der Grade 0 bis 12 (Grad 0 ist 1).
+export function parseTuningLine(line) {
+  const parts = line.split("|");
+  if (parts.length !== 2) return { error: "Name und Werte durch genau ein „|“ trennen" };
+  const name = parts[0].trim();
+  if (!NAME_PATTERN.test(name)) return { error: `Name ungültig: „${name}“` };
+  const values = parts[1].trim().split(/\s+/).filter(Boolean);
+  if (values.length !== 12) return { error: `12 Werte nötig, nicht ${values.length}` };
+  const ratios = [1];
+  for (const value of values) {
+    const ratio = parseValue(value);
+    if (ratio === null) return { error: `Wert nicht lesbar: „${value}“` };
+    ratios.push(ratio);
+  }
+  if (ratios[12] <= 1) return { error: "Die Oktave (letzter Wert) muss größer als 1 sein" };
+  return { name, values, ratios };
+}
+
+// Schreibt eine Stimmung als Zeile.
+export function formatTuningLine(tuning) {
+  return `${tuning.name} | ${tuning.values.join(" ")}`;
+}
+
+// Liest einen Text mit einer Stimmung je Zeile; leere Zeilen zählen nicht. Ergebnis je Zeile wie `parseTuningLine`.
+export function parseTuningText(text) {
+  return text.split(/\r?\n/).filter((line) => line.trim() !== "").map(parseTuningLine);
+}
+
+export const TUNINGS = Object.fromEntries(Object.entries(BUILT_IN_LINES).map(([key, line]) => {
+  const tuning = parseTuningLine(line);
+  if (tuning.error) throw new Error(`Stimmung ${key}: ${tuning.error}`);
+  return [key, tuning];
+}));
 
 export function midiToFrequency(midi, settings) {
   const tuning = TUNINGS[settings.tuningMode];
-  if (!tuning || !tuning.ratios) {
+  if (!tuning) {
     return getEqualTemperamentFrequency(midi, settings);
   }
   return getTunedFrequency(midi, tuning.ratios, settings);
@@ -72,5 +102,6 @@ function getTunedFrequency(midi, ratios, settings) {
   const degree = ((diff % 12) + 12) % 12;
   const octaveShift = Math.floor(diff / 12);
   const rootFreq = getEqualTemperamentFrequency(settings.tuningRootMidi, settings);
+  // Bis Z3.7 rechnet die Oktave fest mit 2 statt mit ratios[12].
   return rootFreq * ratios[degree] * Math.pow(2, octaveShift);
 }
