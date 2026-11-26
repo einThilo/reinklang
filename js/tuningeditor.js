@@ -44,10 +44,25 @@ export function intervalDeviation(entry, degree, octaveRatio) {
   return entry.cents - degree * 1200 * Math.log2(octaveRatio) / 12;
 }
 
+// Unterscheidet einen echten Tipp auf die Liste von einem durchgereichten: Der Finger, der ein Haus antippt, öffnet
+// die Liste schon beim Aufsetzen und lässt dann über einem Eintrag los. Ein Tipp zählt nur, wenn er auf der Liste
+// aufgesetzt hat (`down`) und seit dem Öffnen (`reset`) noch nicht gezählt wurde.
+export function createTapGuard() {
+  let armed = false;
+  return {
+    reset() { armed = false; },
+    down() { armed = true; },
+    isTap() {
+      const tap = armed;
+      armed = false;
+      return tap;
+    }
+  };
+}
+
 // Bedienung des Anpassens. `harmonyKeyboard` ist die Harmonieklaviatur, `panel` das Anpass-Feld rechts,
 // `list` die Intervall-Liste, `strip` der Streifen rechts daneben mit ✓, ✕ und Cent-Feld.
-// `ticker` ist die Richtung der Laufschrift im gewählten Eintrag: „hoch“ (Vorgabe) oder „quer“.
-export function setupTuningEditor({ harmonyKeyboard, panel, list, strip, ticker = "hoch" }) {
+export function setupTuningEditor({ harmonyKeyboard, panel, list, strip }) {
   let editing = false;
   // Schlüssel der Stimmung, die angepasst wird.
   let editingKey = null;
@@ -100,6 +115,7 @@ export function setupTuningEditor({ harmonyKeyboard, panel, list, strip, ticker 
   const degreeLabel = strip.querySelector("#interval-degree");
   const centsInput = strip.querySelector("#interval-cents");
   let rows = null;
+  const tapGuard = createTapGuard();
 
   function currentTuning() {
     return findTuning(editingKey, state.customTunings);
@@ -136,18 +152,16 @@ export function setupTuningEditor({ harmonyKeyboard, panel, list, strip, ticker 
     const octave = currentTuning().ratios[12];
     rows.forEach((row, index) => {
       row.querySelector(".interval-deviation").textContent =
-        formatCents(intervalDeviation(INTERVALS[index], selectedDegree, octave));
+        formatCents(intervalDeviation(INTERVALS[index], selectedDegree, octave), 2);
     });
   }
 
-  // Laufschrift im gewählten Eintrag, nur wenn der Name nicht hineinpasst.
+  // Laufschrift im gewählten Eintrag: Der umbrochene Name läuft nach oben und zurück, nur wenn er nicht in eine
+  // Zeile passt.
   function startTicker(row) {
     const names = row.querySelector(".interval-names");
-    const text = names.firstChild;
-    names.classList.add("ticker", ticker === "quer" ? "ticker-across" : "ticker-up");
-    const distance = ticker === "quer"
-      ? text.offsetWidth - names.clientWidth
-      : text.offsetHeight - names.clientHeight;
+    names.classList.add("ticker");
+    const distance = names.firstChild.offsetHeight - names.clientHeight;
     if (distance <= 0) return;
     names.style.setProperty("--ticker-distance", `-${distance}px`);
     names.style.setProperty("--ticker-duration", `${Math.max(3, distance / 15)}s`);
@@ -155,7 +169,7 @@ export function setupTuningEditor({ harmonyKeyboard, panel, list, strip, ticker 
   }
 
   function stopTicker(row) {
-    row.querySelector(".interval-names").classList.remove("ticker", "ticker-across", "ticker-up", "ticker-running");
+    row.querySelector(".interval-names").classList.remove("ticker", "ticker-running");
   }
 
   // Hebt den Eintrag mit genau dem Wert des Grads hervor und schreibt das Cent-Feld.
@@ -178,6 +192,7 @@ export function setupTuningEditor({ harmonyKeyboard, panel, list, strip, ticker 
     degreeLabel.textContent = `Grad ${selectedDegree}`;
     const tuning = currentTuning();
     valueBeforeList = tuning.values[selectedDegree - 1];
+    tapGuard.reset();
     showDeviations();
     showValue();
     // Gescrollt zum bisherigen Wert, mittig.
@@ -199,10 +214,12 @@ export function setupTuningEditor({ harmonyKeyboard, panel, list, strip, ticker 
     showValue();
   }
 
-  // Ein Tipp (nicht ein Wischen) auf einen Eintrag übernimmt dessen Wert.
+  // Ein Tipp (nicht ein Wischen) auf einen Eintrag übernimmt dessen Wert, aber nur, wenn er auf der Liste begonnen
+  // hat (siehe `createTapGuard`).
+  list.addEventListener("pointerdown", () => tapGuard.down());
   list.addEventListener("click", event => {
     const row = event.target.closest(".interval");
-    if (row && selectedDegree !== null) applyValue(INTERVALS[Number(row.dataset.index)].value);
+    if (tapGuard.isTap() && row && selectedDegree !== null) applyValue(INTERVALS[Number(row.dataset.index)].value);
   });
 
   // ✓ übernimmt die Änderungen, ✕ setzt den Grad auf den Wert beim Öffnen zurück; beide schließen die Liste.

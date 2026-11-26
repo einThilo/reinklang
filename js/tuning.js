@@ -141,12 +141,12 @@ export function deviationPosition(cents) {
   return Math.max(0, Math.min(100, 50 + cents));
 }
 
-// Abweichung als Text in ganzen Cent mit Vorzeichen, z. B. „+2“, „−14“, „0“.
-export function formatCents(cents) {
-  const rounded = Math.round(cents);
-  if (rounded > 0) return `+${rounded}`;
-  if (rounded < 0) return `−${-rounded}`;
-  return "0";
+// Abweichung als Text mit Vorzeichen, ohne Angabe in ganzen Cent („+2“, „−14“, „0“), sonst mit `digits`
+// Nachkommastellen („−13.69“, „0.00“).
+export function formatCents(cents, digits = 0) {
+  const text = Math.abs(cents).toFixed(digits);
+  if (Number(text) === 0) return text;
+  return (cents > 0 ? "+" : "−") + text;
 }
 
 function getEqualTemperamentFrequency(midi, a4Frequency, octave) {

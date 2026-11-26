@@ -80,8 +80,7 @@ function init() {
     harmonyKeyboard,
     panel: document.getElementById("tuning-editor"),
     list: document.getElementById("interval-list"),
-    strip: document.getElementById("interval-strip"),
-    ticker: options.laufschrift ?? "hoch"
+    strip: document.getElementById("interval-strip")
   });
   setupHarmony(harmonyKeyboard, updateRootHighlight, tuningEditor);
   setupInstrument(audioEngine);

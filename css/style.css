@@ -798,21 +798,12 @@ body.layout-block4 #tuning-editor-done {
 #interval-list .interval.current .interval-deviation { color: #bfeaea; }
 #interval-list .interval.current .interval-detail { color: #bbb; }
 
-/* Laufschrift im gewählten Eintrag: senkrecht (Vorgabe) läuft der umbrochene Name nach oben, mit
-   ?laufschrift=quer läuft er waagrecht. Weg und Dauer setzt tuningeditor.js. */
-#interval-list .interval-names.ticker { text-overflow: clip; }
-#interval-list .interval-names.ticker-up { white-space: normal; }
-#interval-list .interval-names.ticker > span { display: inline-block; }
-#interval-list .interval-names.ticker-up > span { display: block; }
-#interval-list .interval-names.ticker-running.ticker-across > span {
-  animation: ticker-across var(--ticker-duration) ease-in-out infinite alternate;
-}
-#interval-list .interval-names.ticker-running.ticker-up > span {
+/* Laufschrift im gewählten Eintrag: Der umbrochene Name läuft nach oben und zurück. Weg und Dauer setzt
+   tuningeditor.js. */
+#interval-list .interval-names.ticker { white-space: normal; text-overflow: clip; }
+#interval-list .interval-names.ticker > span { display: block; }
+#interval-list .interval-names.ticker-running > span {
   animation: ticker-up var(--ticker-duration) ease-in-out infinite alternate;
-}
-@keyframes ticker-across {
-  0%, 15% { transform: translateX(0); }
-  85%, 100% { transform: translateX(var(--ticker-distance)); }
 }
 @keyframes ticker-up {
   0%, 15% { transform: translateY(0); }

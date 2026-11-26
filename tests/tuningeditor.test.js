@@ -51,3 +51,20 @@ test("intervalDeviation: Abweichung vom gleichstufigen Ton des Grads", () => {
   assert.equal(Math.round(intervalDeviation(fifth, 4, 2)), 302);
   assert.ok(Math.abs(intervalDeviation(fifth, 7, 3) - (fifth.cents - 7 * 1200 * Math.log2(3) / 12)) < 1e-9);
 });
+
+import { createTapGuard } from "../js/tuningeditor.js";
+
+test("TapGuard: ein Tipp zählt nur, wenn er auf der Liste begonnen hat", () => {
+  const guard = createTapGuard();
+  // Der Finger, der das Haus antippt und die Liste öffnet, lässt über der Liste los: kein Tipp.
+  guard.reset();
+  assert.equal(guard.isTap(), false);
+  // Ein neuer Finger setzt auf der Liste auf und lässt los: ein Tipp.
+  guard.down();
+  assert.equal(guard.isTap(), true);
+  // Nach dem Tipp braucht der nächste wieder ein Aufsetzen auf der Liste.
+  assert.equal(guard.isTap(), false);
+  guard.down();
+  guard.reset();
+  assert.equal(guard.isTap(), false);
+});

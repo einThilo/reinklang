@@ -285,3 +285,10 @@ test("eine eigene Stimmung klingt nach ihren Werten", () => {
   assertClose(frequencyFromState(64, state), c4 * 81 / 64);
   assertClose(centsFromEqual(64, state), 1200 * Math.log2(81 / 64) - 400);
 });
+
+test("formatCents mit Nachkommastellen (Z3.4)", () => {
+  assert.equal(formatCents(-13.6863, 2), "−13.69");
+  assert.equal(formatCents(1200 * Math.log2(3 / 2) - 400, 2), "+301.96");
+  assert.equal(formatCents(0.001, 2), "0.00");
+  assert.equal(formatCents(-0.004, 2), "0.00");
+});
