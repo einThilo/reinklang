@@ -53,6 +53,7 @@ test("Wechsel des Grundtons verschiebt die Intervalle", () => {
 
 test("jede fest hinterlegte Stimmung hat einen Namen, 12 Werte und die Oktave 2", () => {
   for (const [key, tuning] of Object.entries(TUNINGS)) {
+    if (key === "testStretched") continue;
     assert.equal(typeof tuning.name, "string", key);
     assert.equal(tuning.values.length, 12, key);
     assert.equal(tuning.ratios.length, 13, key);
@@ -69,7 +70,7 @@ test("fest hinterlegte Stimmungen klingen wie vor Z3.1", () => {
     thilo: [1, 17 / 16, 9 / 8, 6 / 5, 5 / 4, 4 / 3, 7 / 5, 3 / 2, 8 / 5, 5 / 3, 7 / 4, 15 / 8],
     liligetia: [1, 17 / 16, 9 / 8, 6 / 5, 5 / 4, 11 / 8, 7 / 5, 12 / 8, 8 / 5, 13 / 8, 7 / 4, 15 / 8]
   };
-  assert.deepEqual(Object.keys(TUNINGS), ["equal", ...Object.keys(before)]);
+  assert.deepEqual(Object.keys(TUNINGS), ["equal", ...Object.keys(before), "testStretched"]);
   for (const [key, ratios] of Object.entries(before)) {
     for (let midi = 40; midi < 90; midi++) {
       const settings = { tuningMode: key, a4Frequency: 440, tuningRootMidi: 62 };
@@ -169,4 +170,43 @@ test("formatCents: ganze Cent mit Vorzeichen", () => {
   assert.equal(formatCents(-13.69), "−14");
   assert.equal(formatCents(0.3), "0");
   assert.equal(formatCents(-0.3), "0");
+});
+
+// Z3.7: Oktavverhältnis aus der Stimmung. „Test gestreckt“ = Werte von Thilo mit Oktave 3/1.
+const stretched = { a4Frequency: 440, tuningMode: "testStretched", useTuning: true, rootMidi: 62 };
+const stretchedEqual = (midi) => 440 * Math.pow(3, (midi - 69) / 12);
+
+test("Test gestreckt: Werte von Thilo, Oktave 3/1", () => {
+  assert.equal(TUNINGS.testStretched.name, "Test gestreckt");
+  assert.deepEqual(TUNINGS.testStretched.values, [...TUNINGS.thilo.values.slice(0, 11), "3/1"]);
+});
+
+test("Oktave ≠ 2: A4 bleibt beim Stimmton, Grundton liegt gleichstufig mit der Oktave der Stimmung", () => {
+  assertClose(frequencyFromState(62, stretched), stretchedEqual(62));
+  assertClose(frequencyFromState(69, { ...stretched, rootMidi: 69 }), 440);
+  assertClose(frequencyFromState(69, { ...stretched, rootMidi: 69, a4Frequency: 432 }), 432);
+});
+
+test("Oktave ≠ 2: Ton = Grundton · Wert · Oktave^k", () => {
+  const root = stretchedEqual(62);
+  assertClose(frequencyFromState(66, stretched), root * 5 / 4);
+  assertClose(frequencyFromState(74, stretched), root * 3);
+  assertClose(frequencyFromState(78, stretched), root * 5 / 4 * 3);
+  assertClose(frequencyFromState(61, stretched), root * 15 / 8 / 3);
+  assertClose(frequencyFromState(50, stretched), root / 3);
+});
+
+test("Oktave ≠ 2: Abweichung gegenüber gleichstufig mit derselben Oktave", () => {
+  const close = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-6, `${actual} statt ${expected}`);
+  close(centsFromEqual(62, stretched), 0);
+  close(centsFromEqual(74, stretched), 0);
+  close(centsFromEqual(66, stretched), 1200 * Math.log2(5 / 4) - 1200 * Math.log2(3) * 4 / 12);
+});
+
+test("Tuning aus: gleichstufig mit Oktave 2, auch wenn die Stimmung eine andere Oktave hat", () => {
+  const off = { ...stretched, useTuning: false };
+  for (let midi = 40; midi < 90; midi++) {
+    assertClose(frequencyFromState(midi, off), 440 * Math.pow(2, (midi - 69) / 12));
+    assert.equal(centsFromEqual(midi, off), 0);
+  }
 });
