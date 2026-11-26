@@ -13,6 +13,7 @@ import { setupComputerKeys } from "./computerkeys.js";
 import { undoZoom } from "./zoom.js";
 import { keepLandscape, lockLandscape } from "./orientation.js";
 import { VERSION } from "./version.js";
+import { markSelected } from "./selectlist.js";
 
 // Schalter für Prototypen (?name=wert), siehe options.js.
 const options = readOptions(location.search);
@@ -241,11 +242,13 @@ function setupInstrument(audioEngine) {
     option.textContent = inst.name;
     instrumentSelect.appendChild(option);
   }
+  const instrumentNames = Object.fromEntries(Object.entries(INSTRUMENTS).map(([key, inst]) => [key, inst.name]));
 
   // Z12.2: Die Beschriftung zeigt den gewählten Namen.
   const nameLabel = document.querySelector("#instrument .val");
   function showName() {
     instrumentSelect.value = state.instrument;
+    markSelected(instrumentSelect, state.instrument, instrumentNames);
     nameLabel.textContent = INSTRUMENTS[state.instrument]?.name ?? "";
   }
 
@@ -270,12 +273,14 @@ function setupTuning() {
     option.textContent = tuning.name;
     tuningSelect.appendChild(option);
   });
+  const tuningNames = Object.fromEntries(Object.entries(TUNINGS).map(([key, tuning]) => [key, tuning.name]));
 
   // Z12.2: Die Beschriftung zeigt den gewählten Namen und ist grau, solange das Tuning aus ist.
   const tuningGroup = document.getElementById("tuning");
   const nameLabel = tuningGroup.querySelector(".val");
   function updateTuningControls() {
     tuningSelect.value = state.tuningMode;
+    markSelected(tuningSelect, state.tuningMode, tuningNames);
     nameLabel.textContent = TUNINGS[state.tuningMode]?.name ?? "";
     tuningGroup.classList.toggle("inactive", !state.useTuning);
   }

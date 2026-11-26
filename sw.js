@@ -22,6 +22,7 @@ const FILES = [
   "js/options.js",
   "js/orientation.js",
   "js/player.js",
+  "js/selectlist.js",
   "js/state.js",
   "js/steps.js",
   "js/tuning.js",
