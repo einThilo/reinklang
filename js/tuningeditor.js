@@ -4,8 +4,10 @@
 // sofort, ohne eigenen Klang, und die Liste bleibt offen. Sustain, Release und Hauptklaviatur bleiben nutzbar.
 
 import { state, setState, setStates, onStateChange } from "./state.js";
-import { TUNINGS, CUSTOM_PREFIX, findTuning, customTuningKey, adjustedCopy, withDegreeValue, centsToValue } from "./tuning.js";
-import { INTERVALS, formatIntervalCents, nearestIntervalIndex } from "./intervals.js";
+import {
+  TUNINGS, CUSTOM_PREFIX, findTuning, customTuningKey, adjustedCopy, withDegreeValue, centsToValue, formatCents
+} from "./tuning.js";
+import { INTERVALS, nearestIntervalIndex } from "./intervals.js";
 
 // Wert des Eintrags „Stimmung anpassen“ in der Stimmungsliste; kein Schlüssel einer Stimmung.
 export const ADJUST_ENTRY = "adjust";
@@ -29,18 +31,29 @@ export function degreeCents(tuning, degree) {
   return 1200 * Math.log2(tuning.ratios[degree]);
 }
 
-// Stelle des Eintrags, der gleich hoch ist wie der Wert (auf 0,005 Cent), sonst −1. Er wird hervorgehoben.
-export function sameIntervalIndex(intervals, cents) {
-  return intervals.findIndex((entry) => Math.abs(entry.cents - cents) < 0.005);
+// Stelle des Eintrags mit genau diesem Wert, sonst −1. Er wird hervorgehoben; nach einer freien Eingabe wie
+// `386.31` also keiner. Cent-Werte zählen als Zahl (`300.0` ist `300.00`), Verhältnisse als Text.
+export function currentIntervalIndex(intervals, value) {
+  const isCents = text => text.includes(".");
+  return intervals.findIndex((entry) =>
+    isCents(value) ? isCents(entry.value) && Number(entry.value) === Number(value) : entry.value === value);
+}
+
+// Abweichung eines Eintrags vom gleichstufigen Ton des Grads in Cent, mit dem Oktavverhältnis der Stimmung.
+export function intervalDeviation(entry, degree, octaveRatio) {
+  return entry.cents - degree * 1200 * Math.log2(octaveRatio) / 12;
 }
 
 // Bedienung des Anpassens. `harmonyKeyboard` ist die Harmonieklaviatur, `panel` das Anpass-Feld rechts,
-// `list` die Intervall-Liste, `strip` der Streifen rechts daneben mit ✕ und Cent-Feld.
-export function setupTuningEditor({ harmonyKeyboard, panel, list, strip }) {
+// `list` die Intervall-Liste, `strip` der Streifen rechts daneben mit ✓, ✕ und Cent-Feld.
+// `ticker` ist die Richtung der Laufschrift im gewählten Eintrag: „hoch“ (Vorgabe) oder „quer“.
+export function setupTuningEditor({ harmonyKeyboard, panel, list, strip, ticker = "hoch" }) {
   let editing = false;
   // Schlüssel der Stimmung, die angepasst wird.
   let editingKey = null;
   let selectedDegree = null;
+  // Wert des Grads beim Öffnen der Liste; ✕ setzt ihn zurück.
+  let valueBeforeList = null;
 
   // Die Häuser schrumpfen beim Anpassen (CSS-Klasse „editing“).
   function markHouses() {
@@ -67,7 +80,7 @@ export function setupTuningEditor({ harmonyKeyboard, panel, list, strip }) {
 
   function stop() {
     if (!editing) return;
-    closeList();
+    if (!list.hidden) closeList();
     editing = false;
     panel.hidden = true;
     markHouses();
@@ -92,7 +105,8 @@ export function setupTuningEditor({ harmonyKeyboard, panel, list, strip }) {
     return findTuning(editingKey, state.customTunings);
   }
 
-  // Die Einträge entstehen beim ersten Öffnen. Oben Wert und Cent, darunter klein die Namen.
+  // Die Einträge entstehen beim ersten Öffnen. Oben die Namen groß und rechts die Abweichung vom gleichstufigen Ton
+  // des Grads, darunter klein Wert und Cent.
   function buildRows() {
     rows = INTERVALS.map((entry, index) => {
       const row = document.createElement("div");
@@ -100,28 +114,61 @@ export function setupTuningEditor({ harmonyKeyboard, panel, list, strip }) {
       row.dataset.index = String(index);
       const top = document.createElement("div");
       top.className = "interval-top";
-      const value = document.createElement("span");
-      value.className = "interval-value";
-      value.textContent = entry.value;
-      const cents = document.createElement("span");
-      cents.className = "interval-cents";
-      cents.textContent = formatIntervalCents(entry);
-      top.append(value, cents);
       const names = document.createElement("div");
       names.className = "interval-names";
-      names.textContent = entry.names.join(" / ");
-      row.append(top, names);
+      const namesText = document.createElement("span");
+      namesText.textContent = entry.names.join(" / ");
+      names.appendChild(namesText);
+      const deviation = document.createElement("span");
+      deviation.className = "interval-deviation";
+      top.append(names, deviation);
+      const detail = document.createElement("div");
+      detail.className = "interval-detail";
+      detail.textContent = `${entry.value} · ${entry.cents.toFixed(2)} ct`;
+      row.append(top, detail);
       list.appendChild(row);
       return row;
     });
   }
 
-  // Hebt den Eintrag des Werts hervor und schreibt das Cent-Feld.
+  // Abweichungen zum gleichstufigen Ton des gewählten Grads.
+  function showDeviations() {
+    const octave = currentTuning().ratios[12];
+    rows.forEach((row, index) => {
+      row.querySelector(".interval-deviation").textContent =
+        formatCents(intervalDeviation(INTERVALS[index], selectedDegree, octave));
+    });
+  }
+
+  // Laufschrift im gewählten Eintrag, nur wenn der Name nicht hineinpasst.
+  function startTicker(row) {
+    const names = row.querySelector(".interval-names");
+    const text = names.firstChild;
+    names.classList.add("ticker", ticker === "quer" ? "ticker-across" : "ticker-up");
+    const distance = ticker === "quer"
+      ? text.offsetWidth - names.clientWidth
+      : text.offsetHeight - names.clientHeight;
+    if (distance <= 0) return;
+    names.style.setProperty("--ticker-distance", `-${distance}px`);
+    names.style.setProperty("--ticker-duration", `${Math.max(3, distance / 15)}s`);
+    names.classList.add("ticker-running");
+  }
+
+  function stopTicker(row) {
+    row.querySelector(".interval-names").classList.remove("ticker", "ticker-across", "ticker-up", "ticker-running");
+  }
+
+  // Hebt den Eintrag mit genau dem Wert des Grads hervor und schreibt das Cent-Feld.
   function showValue() {
-    const cents = degreeCents(currentTuning(), selectedDegree);
-    const same = sameIntervalIndex(INTERVALS, cents);
-    rows.forEach((row, index) => row.classList.toggle("current", index === same));
-    centsInput.value = cents.toFixed(2);
+    const tuning = currentTuning();
+    const current = currentIntervalIndex(INTERVALS, tuning.values[selectedDegree - 1]);
+    rows.forEach((row, index) => {
+      const wasCurrent = row.classList.contains("current");
+      row.classList.toggle("current", index === current);
+      if (wasCurrent && index !== current) stopTicker(row);
+      if (!wasCurrent && index === current) startTicker(row);
+    });
+    centsInput.value = degreeCents(tuning, selectedDegree).toFixed(2);
   }
 
   function openList() {
@@ -129,10 +176,12 @@ export function setupTuningEditor({ harmonyKeyboard, panel, list, strip }) {
     list.hidden = false;
     strip.hidden = false;
     degreeLabel.textContent = `Grad ${selectedDegree}`;
+    const tuning = currentTuning();
+    valueBeforeList = tuning.values[selectedDegree - 1];
+    showDeviations();
     showValue();
     // Gescrollt zum bisherigen Wert, mittig.
-    const tuning = currentTuning();
-    const nearest = nearestIntervalIndex(INTERVALS, tuning.values[selectedDegree - 1]);
+    const nearest = nearestIntervalIndex(INTERVALS, valueBeforeList);
     const row = rows[Math.max(0, nearest)];
     list.scrollTop = row.offsetTop - (list.clientHeight - row.offsetHeight) / 2;
   }
@@ -156,10 +205,18 @@ export function setupTuningEditor({ harmonyKeyboard, panel, list, strip }) {
     if (row && selectedDegree !== null) applyValue(INTERVALS[Number(row.dataset.index)].value);
   });
 
-  // Ein Tipp auf den Streifen schließt die Liste, außer auf das Cent-Feld.
+  // ✓ übernimmt die Änderungen, ✕ setzt den Grad auf den Wert beim Öffnen zurück; beide schließen die Liste.
+  // Ein Tipp anderswo auf den Streifen bewirkt nichts.
   strip.addEventListener("pointerdown", event => {
-    if (event.target === centsInput) return;
-    event.preventDefault();
+    if (event.target !== centsInput) event.preventDefault();
+  });
+  strip.querySelector("#interval-accept").addEventListener("click", () => {
+    if (document.activeElement === centsInput) centsInput.blur();
+    closeList();
+  });
+  strip.querySelector("#interval-close").addEventListener("click", () => {
+    if (document.activeElement === centsInput) centsInput.blur();
+    if (selectedDegree !== null) applyValue(valueBeforeList);
     closeList();
   });
 

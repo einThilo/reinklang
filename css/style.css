@@ -732,6 +732,8 @@ body.rotated #app {
    ============================================================ */
 #harmony-keyboard .house { transition: transform 0.2s; }
 #harmony-keyboard.editing .house { transform: scale(0.88); }
+/* ⇤, 1. und „Stimmung aus“ reagieren beim Anpassen nicht und sind ausgegraut. */
+#harmony-keyboard.editing .special { opacity: 0.3; }
 
 #tuning-editor {
   grid-area: 1 / 4 / 6 / 8;
@@ -758,8 +760,9 @@ body.layout-block4 #tuning-editor-done {
 }
 
 /* Intervall-Liste (Z3.4): überdeckt Harmonieklaviatur, Instrument, Stimmung und das Anpass-Feld bis auf den
-   ausgegrauten Streifen ganz rechts (Spalten Transposition und Stimmton). Ein Eintrag: oben Wert und Cent mit
-   Abweichung, darunter klein die Namen, einzeilig gekürzt. Der Eintrag des bisherigen Werts ist türkis. */
+   ausgegrauten Streifen ganz rechts (Spalten Transposition und Stimmton). Ein Eintrag: oben die Namen groß
+   (einzeilig gekürzt) und rechts die Abweichung vom gleichstufigen Ton des Grads, darunter klein Wert und Cent.
+   Der Eintrag mit genau dem Wert des Grads ist türkis, sein Name läuft, wenn er nicht hineinpasst. */
 #interval-list {
   grid-area: 1 / 2 / 6 / 6;
   z-index: 6;
@@ -771,27 +774,50 @@ body.layout-block4 #tuning-editor-done {
   background: #1c1d20;
   box-shadow: inset 0 0 0 1px #000;
   color: #ddd;
-  font-size: clamp(11px, 3vmin, 16px);
+  font-size: clamp(12px, 3.6vmin, 18px);
 }
 #interval-list[hidden], #interval-strip[hidden] { display: none; }
 #interval-list .interval {
-  padding: 0.35em 0.7em;
+  padding: 0.3em 0.7em;
   border-bottom: 1px solid #2c2e32;
   cursor: pointer;
 }
-#interval-list .interval-top { display: flex; justify-content: space-between; gap: 1em; }
-#interval-list .interval-value { font-weight: bold; }
-#interval-list .interval-cents { color: #53a0a0; white-space: nowrap; }
+#interval-list .interval-top { display: flex; align-items: baseline; gap: 1em; }
 #interval-list .interval-names {
-  font-size: 0.8em;
-  color: #999;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 1.3em;
+  line-height: 1.3em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+#interval-list .interval-deviation { color: #53a0a0; font-weight: bold; white-space: nowrap; }
+#interval-list .interval-detail { font-size: 0.65em; color: #888; }
 #interval-list .interval.current { background: #1f5f60; }
-#interval-list .interval.current .interval-cents { color: #bfeaea; }
-#interval-list .interval.current .interval-names { color: #ccc; }
+#interval-list .interval.current .interval-deviation { color: #bfeaea; }
+#interval-list .interval.current .interval-detail { color: #bbb; }
+
+/* Laufschrift im gewählten Eintrag: senkrecht (Vorgabe) läuft der umbrochene Name nach oben, mit
+   ?laufschrift=quer läuft er waagrecht. Weg und Dauer setzt tuningeditor.js. */
+#interval-list .interval-names.ticker { text-overflow: clip; }
+#interval-list .interval-names.ticker-up { white-space: normal; }
+#interval-list .interval-names.ticker > span { display: inline-block; }
+#interval-list .interval-names.ticker-up > span { display: block; }
+#interval-list .interval-names.ticker-running.ticker-across > span {
+  animation: ticker-across var(--ticker-duration) ease-in-out infinite alternate;
+}
+#interval-list .interval-names.ticker-running.ticker-up > span {
+  animation: ticker-up var(--ticker-duration) ease-in-out infinite alternate;
+}
+@keyframes ticker-across {
+  0%, 15% { transform: translateX(0); }
+  85%, 100% { transform: translateX(var(--ticker-distance)); }
+}
+@keyframes ticker-up {
+  0%, 15% { transform: translateY(0); }
+  85%, 100% { transform: translateY(var(--ticker-distance)); }
+}
 
 #interval-strip {
   grid-area: 1 / 6 / 6 / 8;
@@ -807,12 +833,14 @@ body.layout-block4 #tuning-editor-done {
   font-size: clamp(11px, 3vmin, 16px);
   text-align: center;
 }
-body.layout-block4 #interval-close {
-  --c: #ddd;
-  flex: 1 1 auto;
+#interval-strip .interval-buttons { flex: 1 1 auto; display: flex; gap: 6px; }
+body.layout-block4 #interval-strip .interval-buttons button {
+  flex: 1 1 0;
   font-size: 2em;
   background: #4a4d52;
 }
+body.layout-block4 #interval-close { --c: #ddd; }
+body.layout-block4 #interval-accept { --c: var(--st); }
 #interval-cents {
   box-sizing: border-box;
   width: 100%;

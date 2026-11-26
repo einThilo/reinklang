@@ -24,5 +24,6 @@ test("unbekannter Wert oder unbekannter Name gilt als Vorgabe", () => {
 });
 
 test("ohne Tabelle gelten die Schalter aus options.js", () => {
-  assert.deepEqual(readOptions("?wach=1"), {});
+  assert.deepEqual(readOptions("?wach=1"), { laufschrift: null });
+  assert.equal(readOptions("?laufschrift=quer").laufschrift, "quer");
 });
