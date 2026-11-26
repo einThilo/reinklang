@@ -215,3 +215,73 @@ test("Tuning aus: gleichstufig mit Oktave 2, auch wenn die Stimmung eine andere 
     assert.equal(centsFromEqual(midi, off), 0);
   }
 });
+
+// Z3.4: eigene Stimmungen und Anpassen.
+import { findTuning, customTuningKey, adjustedCopy, withDegreeValue, centsToValue } from "../js/tuning.js";
+
+test("findTuning findet fest hinterlegte und eigene Stimmungen", () => {
+  const own = adjustedCopy(TUNINGS.thilo);
+  const customTunings = { [customTuningKey(own.name)]: own };
+  assert.equal(findTuning("thilo"), TUNINGS.thilo);
+  assert.equal(findTuning(customTuningKey(own.name), customTunings), own);
+  assert.equal(findTuning(customTuningKey("Thilo")), undefined);
+  assert.equal(findTuning("toString"), undefined);
+});
+
+test("eine eigene Stimmung heißt nie wie eine fest hinterlegte Stimmung im Schlüssel", () => {
+  assert.equal(customTuningKey("thilo").startsWith("own:"), true);
+  assert.equal(findTuning(customTuningKey("thilo"), {}), undefined);
+});
+
+test("adjustedCopy: Name mit „(angepasst)“, gleiche Werte, eigene Listen", () => {
+  const copy = adjustedCopy(TUNINGS.thilo);
+  assert.equal(copy.name, "Thilo (angepasst)");
+  assert.deepEqual(copy.values, TUNINGS.thilo.values);
+  assert.deepEqual(copy.ratios, TUNINGS.thilo.ratios);
+  copy.values[0] = "1/1";
+  copy.ratios[1] = 1;
+  assert.equal(TUNINGS.thilo.values[0], "17/16");
+  assert.equal(TUNINGS.thilo.ratios[1], 17 / 16);
+});
+
+test("adjustedCopy: eine Kopie behält ihren Namen, lange Namen werden auf 40 Zeichen gekürzt", () => {
+  assert.equal(adjustedCopy(adjustedCopy(TUNINGS.thilo)).name, "Thilo (angepasst)");
+  const long = parseTuningLine(`${"x".repeat(40)} | ${TUNINGS.thilo.values.join(" ")}`);
+  const copy = adjustedCopy(long);
+  assert.equal(copy.name.length, 40);
+  assert.ok(copy.name.endsWith(" (angepasst)"));
+  assert.equal(parseTuningLine(formatTuningLine(copy)).name, copy.name);
+});
+
+test("withDegreeValue setzt Text und Verhältnis eines Grads, die alte Stimmung bleibt", () => {
+  const copy = adjustedCopy(TUNINGS.thilo);
+  const changed = withDegreeValue(copy, 4, "81/64");
+  assert.equal(changed.values[3], "81/64");
+  assert.equal(changed.ratios[4], 81 / 64);
+  assert.equal(copy.values[3], "5/4");
+  assertClose(withDegreeValue(copy, 1, "100.00").ratios[1], Math.pow(2, 1 / 12));
+  assert.deepEqual(parseTuningLine(formatTuningLine(changed)), changed);
+});
+
+test("withDegreeValue: Grad 0 und 12 sind nicht änderbar, unlesbare Werte werden abgelehnt", () => {
+  const copy = adjustedCopy(TUNINGS.thilo);
+  assert.throws(() => withDegreeValue(copy, 0, "5/4"));
+  assert.throws(() => withDegreeValue(copy, 12, "3/1"));
+  assert.throws(() => withDegreeValue(copy, 4, "abc"));
+});
+
+test("centsToValue begrenzt auf 0–1200 und schreibt zwei Nachkommastellen", () => {
+  assert.equal(centsToValue(386.3137), "386.31");
+  assert.equal(centsToValue(386), "386.00");
+  assert.equal(centsToValue(-5), "0.00");
+  assert.equal(centsToValue(1500), "1200.00");
+  assert.equal(centsToValue(NaN), null);
+});
+
+test("eine eigene Stimmung klingt nach ihren Werten", () => {
+  const own = withDegreeValue(adjustedCopy(TUNINGS.thilo), 4, "81/64");
+  const key = customTuningKey(own.name);
+  const state = { useTuning: true, a4Frequency: 440, rootMidi: 60, tuningMode: key, customTunings: { [key]: own } };
+  assertClose(frequencyFromState(64, state), c4 * 81 / 64);
+  assertClose(centsFromEqual(64, state), 1200 * Math.log2(81 / 64) - 400);
+});

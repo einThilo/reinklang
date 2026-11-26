@@ -3,6 +3,8 @@ export const state = {
   rootMidi: 60,
   harmonyMode: "first",
   tuningMode: "thilo",
+  // Eigene Stimmungen (Z3.4): Schlüssel `own:<Name>` → Stimmung. Jede Änderung ist ein neues Objekt.
+  customTunings: {},
   useTuning: false,
   a4Frequency: 440,
   transpose: 0,

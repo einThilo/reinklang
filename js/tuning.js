@@ -58,19 +58,63 @@ export const TUNINGS = Object.fromEntries(Object.entries(BUILT_IN_LINES).map(([k
   return [key, tuning];
 }));
 
+// Eigene Stimmungen (Z3.4) liegen in `state.customTunings` unter einem Schlüssel `own:<Name>`, getrennt von den
+// fest hinterlegten, damit diese nie überschrieben werden.
+export const CUSTOM_PREFIX = "own:";
+
+export function customTuningKey(name) {
+  return CUSTOM_PREFIX + name;
+}
+
+// Stimmung zu einem Schlüssel: eigene oder fest hinterlegte, sonst undefined.
+export function findTuning(key, customTunings = {}) {
+  if (key.startsWith(CUSTOM_PREFIX)) return customTunings[key];
+  return Object.prototype.hasOwnProperty.call(TUNINGS, key) ? TUNINGS[key] : undefined;
+}
+
+const ADJUSTED_SUFFIX = " (angepasst)";
+
+// Kopie einer Stimmung zum Anpassen, Name „Name (angepasst)“; der Name wird gekürzt, damit er höchstens 40 Zeichen
+// hat. Eine Kopie behält ihren Namen.
+export function adjustedCopy(tuning) {
+  const name = tuning.name.endsWith(ADJUSTED_SUFFIX)
+    ? tuning.name
+    : tuning.name.slice(0, 40 - ADJUSTED_SUFFIX.length).trim() + ADJUSTED_SUFFIX;
+  return { name, values: [...tuning.values], ratios: [...tuning.ratios] };
+}
+
+// Neue Stimmung, in der Grad `degree` (1 bis 11) den Wert `value` (Text wie in einer Zeile) hat.
+// Grad 0 ist immer 1, Grad 12 (Oktave) wird hier nicht geändert.
+export function withDegreeValue(tuning, degree, value) {
+  if (!Number.isInteger(degree) || degree < 1 || degree > 11) throw new Error(`Grad ${degree} nicht änderbar`);
+  const ratio = parseTuningValue(value);
+  if (ratio === null) throw new Error(`Wert nicht lesbar: „${value}“`);
+  const values = [...tuning.values];
+  const ratios = [...tuning.ratios];
+  values[degree - 1] = value;
+  ratios[degree] = ratio;
+  return { name: tuning.name, values, ratios };
+}
+
+// Freie Cent-Eingabe als Wert: begrenzt auf 0–1200, zwei Nachkommastellen (`386.00`). Keine Zahl ergibt null.
+export function centsToValue(cents) {
+  if (typeof cents !== "number" || !Number.isFinite(cents)) return null;
+  return Math.max(0, Math.min(1200, cents)).toFixed(2);
+}
+
 // Frequenz eines Tons. Gleichstufig ist Ton n = Stimmton · O^((n − 69)/12) mit dem Oktavverhältnis O der
 // Stimmung; der Grundton ist einer dieser Töne, ein Ton auf Grad g, k Oktaven darüber, ist Grundton · Wert[g] · O^k.
-// Eine unbekannte Stimmung rechnet gleichstufig mit O = 2.
+// Eine unbekannte Stimmung rechnet gleichstufig mit O = 2. `settings.customTunings` sind die eigenen Stimmungen.
 export function midiToFrequency(midi, settings) {
-  const tuning = TUNINGS[settings.tuningMode];
+  const tuning = findTuning(settings.tuningMode, settings.customTunings);
   if (!tuning) {
     return getEqualTemperamentFrequency(midi, settings.a4Frequency, 2);
   }
   return getTunedFrequency(midi, tuning.ratios, settings);
 }
 
-// Frequenz eines Tons aus den Einstellungen (`a4Frequency`, `tuningMode`, `useTuning`, `rootMidi`).
-// Ist das Tuning aus, gilt gleichstufig mit Oktave 2.
+// Frequenz eines Tons aus den Einstellungen (`a4Frequency`, `tuningMode`, `customTunings`, `useTuning`,
+// `rootMidi`). Ist das Tuning aus, gilt gleichstufig mit Oktave 2.
 export function frequencyFromState(midi, state) {
   if (!state.useTuning) {
     return getEqualTemperamentFrequency(midi, state.a4Frequency, 2);
@@ -78,6 +122,7 @@ export function frequencyFromState(midi, state) {
   return midiToFrequency(midi, {
     a4Frequency: state.a4Frequency,
     tuningMode: state.tuningMode,
+    customTunings: state.customTunings,
     tuningRootMidi: state.rootMidi
   });
 }
@@ -85,7 +130,7 @@ export function frequencyFromState(midi, state) {
 // Abweichung eines Tons von gleichstufig in Cent (100 Cent = ein Halbton), aus denselben Einstellungen wie
 // `frequencyFromState`. Gleichstufig mit dem Oktavverhältnis der Stimmung; ohne Tuning ist sie 0.
 export function centsFromEqual(midi, state) {
-  const octave = state.useTuning ? TUNINGS[state.tuningMode]?.ratios[12] ?? 2 : 2;
+  const octave = state.useTuning ? findTuning(state.tuningMode, state.customTunings)?.ratios[12] ?? 2 : 2;
   const equal = getEqualTemperamentFrequency(midi, state.a4Frequency, octave);
   return 1200 * Math.log2(frequencyFromState(midi, state) / equal);
 }

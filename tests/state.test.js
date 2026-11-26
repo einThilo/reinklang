@@ -9,6 +9,7 @@ test("Startwerte", () => {
     rootMidi: 60,
     harmonyMode: "first",
     tuningMode: "thilo",
+    customTunings: {},
     useTuning: false,
     a4Frequency: 440,
     transpose: 0,
