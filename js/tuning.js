@@ -15,7 +15,7 @@ const BUILT_IN_LINES = {
 const NAME_PATTERN = /^[\p{L}\p{N} \-_.,()+'#]{1,40}$/u;
 
 // Ein Wert als Frequenzverhältnis, oder null, wenn er nicht lesbar ist.
-function parseValue(text) {
+export function parseTuningValue(text) {
   if (/^-?(\d+\.\d*|\.\d+)$/.test(text)) return Math.pow(2, Number(text) / 1200);
   const match = /^(\d+)(?:\/(\d+))?$/.exec(text);
   if (!match) return null;
@@ -34,7 +34,7 @@ export function parseTuningLine(line) {
   if (values.length !== 12) return { error: `12 Werte nötig, nicht ${values.length}` };
   const ratios = [1];
   for (const value of values) {
-    const ratio = parseValue(value);
+    const ratio = parseTuningValue(value);
     if (ratio === null) return { error: `Wert nicht lesbar: „${value}“` };
     ratios.push(ratio);
   }

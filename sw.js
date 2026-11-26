@@ -16,6 +16,7 @@ const FILES = [
   "js/diagnose.js",
   "js/harmony.js",
   "js/installed.js",
+  "js/intervals.js",
   "js/instruments.js",
   "js/keyboard.js",
   "js/main.js",
