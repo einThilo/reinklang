@@ -53,7 +53,6 @@ test("Wechsel des Grundtons verschiebt die Intervalle", () => {
 
 test("jede fest hinterlegte Stimmung hat einen Namen, 12 Werte und die Oktave 2", () => {
   for (const [key, tuning] of Object.entries(TUNINGS)) {
-    if (key === "testStretched") continue;
     assert.equal(typeof tuning.name, "string", key);
     assert.equal(tuning.values.length, 12, key);
     assert.equal(tuning.ratios.length, 13, key);
@@ -70,7 +69,7 @@ test("fest hinterlegte Stimmungen klingen wie vor Z3.1", () => {
     thilo: [1, 17 / 16, 9 / 8, 6 / 5, 5 / 4, 4 / 3, 7 / 5, 3 / 2, 8 / 5, 5 / 3, 7 / 4, 15 / 8],
     liligetia: [1, 17 / 16, 9 / 8, 6 / 5, 5 / 4, 11 / 8, 7 / 5, 12 / 8, 8 / 5, 13 / 8, 7 / 4, 15 / 8]
   };
-  assert.deepEqual(Object.keys(TUNINGS), ["equal", ...Object.keys(before), "testStretched"]);
+  assert.deepEqual(Object.keys(TUNINGS), ["equal", ...Object.keys(before)]);
   for (const [key, ratios] of Object.entries(before)) {
     for (let midi = 40; midi < 90; midi++) {
       const settings = { tuningMode: key, a4Frequency: 440, tuningRootMidi: 62 };
@@ -172,15 +171,20 @@ test("formatCents: ganze Cent mit Vorzeichen", () => {
   assert.equal(formatCents(-0.3), "0");
 });
 
-// Z3.7: Oktavverhältnis aus der Stimmung. „Test gestreckt“ = Thilo, gestreckt auf die Oktave 3/1.
-const stretched = { a4Frequency: 440, tuningMode: "testStretched", useTuning: true, rootMidi: 62 };
+// Z3.7: Oktavverhältnis aus der Stimmung. „Test gestreckt“ = Thilo, gestreckt auf die Oktave 3/1 (Cent mal log2(3)),
+// als eigene Stimmung, weil sie in main nicht fest hinterlegt ist.
+const STRETCHED = parseTuningLine(
+  "Test gestreckt | 166.35 323.19 500.28 612.29 789.38 923.26 1112.57 1289.66 1401.68 1535.55 1724.87 3/1");
+const stretched = {
+  a4Frequency: 440, tuningMode: "own:Test gestreckt", customTunings: { "own:Test gestreckt": STRETCHED },
+  useTuning: true, rootMidi: 62
+};
 const stretchedEqual = (midi) => 440 * Math.pow(3, (midi - 69) / 12);
 
 test("Test gestreckt: jede Stufe von Thilo im Maß der Oktave 3/1 gestreckt", () => {
-  assert.equal(TUNINGS.testStretched.name, "Test gestreckt");
   TUNINGS.thilo.ratios.forEach((ratio, degree) => {
     const expected = Math.pow(ratio, Math.log2(3));
-    const actual = TUNINGS.testStretched.ratios[degree];
+    const actual = STRETCHED.ratios[degree];
     assert.ok(Math.abs(actual - expected) < 1e-5 * expected, `Grad ${degree}: ${actual} statt ${expected}`);
   });
 });
@@ -193,7 +197,7 @@ test("Oktave ≠ 2: A4 bleibt beim Stimmton, Grundton liegt gleichstufig mit der
 
 test("Oktave ≠ 2: Ton = Grundton · Wert · Oktave^k", () => {
   const root = stretchedEqual(62);
-  const ratios = TUNINGS.testStretched.ratios;
+  const ratios = STRETCHED.ratios;
   assertClose(frequencyFromState(66, stretched), root * ratios[4]);
   assertClose(frequencyFromState(74, stretched), root * 3);
   assertClose(frequencyFromState(78, stretched), root * ratios[4] * 3);
