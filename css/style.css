@@ -347,120 +347,18 @@ body[class*="layout-"] .sustain-release-half {
   text-align: center;
 }
 
-/* --- Variante "band": Leiste, darunter Band Release | Sustain | Use tuning, darunter Klaviatur --- */
-body.layout-band #app {
-  grid-template-columns: minmax(0, 35fr) minmax(0, 16fr) minmax(0, 20fr) minmax(0, 19fr) minmax(0, 10fr);
-  grid-template-rows: minmax(0, 16fr) minmax(0, 16fr) minmax(0, 17fr) minmax(0, 51fr);
-  grid-template-areas:
-    "rootkeys instrument range    transpose fullscreen"
-    "rootkeys tuning     range    pitch     autoroot"
-    "release  sustain    sustain  use       use"
-    "keyboard keyboard   keyboard keyboard  keyboard";
-}
-
-/* --- Variante "band-unten": wie "band", das Band liegt unter der Klaviatur am unteren Rand --- */
-body.layout-band-unten #app {
-  grid-template-columns: minmax(0, 35fr) minmax(0, 16fr) minmax(0, 20fr) minmax(0, 19fr) minmax(0, 10fr);
-  grid-template-rows: minmax(0, 16fr) minmax(0, 16fr) minmax(0, 51fr) minmax(0, 17fr);
-  grid-template-areas:
-    "rootkeys instrument range    transpose fullscreen"
-    "rootkeys tuning     range    pitch     autoroot"
-    "keyboard keyboard   keyboard keyboard  keyboard"
-    "release  sustain    sustain  use       use";
-}
-
-/* --- Varianten "ecke" und "ecken": Spielknöpfe groß in der höheren Leiste, Einstellungen in vier Zeilen --- */
-
-
-/* "ecke": Release/Sustain und Use tuning am linken Ende der Leiste. */
-body.layout-ecke #app {
-  grid-template-columns:
-    minmax(0, 12fr) minmax(0, 10fr) minmax(0, 35fr)
-    minmax(0, 14.33fr) minmax(0, 7.17fr) minmax(0, 21.5fr);
-  grid-template-rows: repeat(4, minmax(0, 12.25fr)) minmax(0, 51fr);
-  grid-template-areas:
-    "release  use      rootkeys instrument instrument tuning"
-    "release  use      rootkeys range      range      transpose"
-    "sustain  use      rootkeys range      range      pitch"
-    "sustain  use      rootkeys fullscreen autoroot   autoroot"
-    "keyboard keyboard keyboard keyboard   keyboard   keyboard";
-}
-
-/* "ecken": Release/Sustain am linken, Use tuning am rechten Ende der Leiste. */
-body.layout-ecken #app {
-  grid-template-columns:
-    minmax(0, 12fr) minmax(0, 35fr)
-    minmax(0, 14.33fr) minmax(0, 7.17fr) minmax(0, 21.5fr) minmax(0, 10fr);
-  grid-template-rows: repeat(4, minmax(0, 12.25fr)) minmax(0, 51fr);
-  grid-template-areas:
-    "release  rootkeys instrument instrument tuning    use"
-    "release  rootkeys range      range      transpose use"
-    "sustain  rootkeys range      range      pitch     use"
-    "sustain  rootkeys fullscreen autoroot   autoroot  use"
-    "keyboard keyboard keyboard   keyboard   keyboard  keyboard";
-}
-
-/* --- Variante "klassisch-2" (L1.2): Aufbau der Vorgabe mit W3, L3, L4, L5 ---
-   Harmonie-Automatik zwei Drittel hoch, darunter Fullscreen klein; Tuning, Use tuning, Stimmton und
-   Transposition als Block; Tastenbereich als Spalte am rechten Rand; Klaviatur wie in der Vorgabe. */
-body.layout-klassisch-2 #app {
-  grid-template-columns:
-    minmax(0, 6fr) minmax(0, 2fr) minmax(0, 2.5fr)
-    minmax(0, 2fr) minmax(0, 2.5fr) minmax(0, 2fr);
-  grid-template-rows: repeat(6, minmax(0, 14fr)) minmax(0, 147fr);
-  grid-template-areas:
-    "rootkeys autoroot   sustain  instrument instrument range"
-    "rootkeys autoroot   sustain  instrument instrument range"
-    "rootkeys autoroot   sustain  tuning     pitch      range"
-    "rootkeys autoroot   release  tuning     pitch      range"
-    "rootkeys fullscreen release  use        transpose  range"
-    "rootkeys fullscreen release  use        transpose  range"
-    "keyboard keyboard   keyboard keyboard   keyboard   keyboard";
-}
-
-/* Tastenbereich: drei Zeilen << < | > >> | - +. */
-body.layout-klassisch-2 #keyboard-tools {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-rows: repeat(3, minmax(0, 1fr));
-}
-
-body.layout-klassisch-2 #keyboard-tools [data-action="decKeys"],
-body.layout-klassisch-2 #keyboard-tools [data-action="incKeys"] {
-  grid-column: auto;
-}
-
-/* Stimmton: Zahl größer (W3). */
-body.layout-klassisch-2 .tone-input-group input {
-  flex: 1.3 1 0;
-  font-size: clamp(16px, 5vmin, 28px);
-}
-
-/* --- Variante "band-gruppe" (L1.2): wie "band", rechts untereinander Tuning, Stimmton | Transposition,
-   Use tuning; Fullscreen und Harmonie-Automatik klein unter dem Instrument. --- */
-body.layout-band-gruppe #app {
-  grid-template-columns:
-    minmax(0, 35fr) minmax(0, 8fr) minmax(0, 8fr)
-    minmax(0, 20fr) minmax(0, 14.5fr) minmax(0, 14.5fr);
-  grid-template-rows: minmax(0, 16fr) minmax(0, 16fr) minmax(0, 17fr) minmax(0, 51fr);
-  grid-template-areas:
-    "rootkeys instrument instrument range    tuning   tuning"
-    "rootkeys fullscreen autoroot   range    pitch    transpose"
-    "release  sustain    sustain    sustain  use      use"
-    "keyboard keyboard   keyboard   keyboard keyboard keyboard";
-}
-
 /* ============================================================
-   Wunsch-Layouts aus dem Werkzeug (L1.3, L1.5): block1, block2, block3, band1, block4.
+   Wunsch-Layout aus dem Werkzeug (L1.5): block4.
    Kanten aus werkzeug/Vorschlaege.md, näher als 2 % zu einer Linie verschmolzen; gleichartige Tasten
    gleich groß. Stimmton, Transposition und Tastenbereich lösen sich auf, jeder Teil liegt einzeln im Grid.
    ============================================================ */
 
-:is(body.layout-block1, body.layout-block2, body.layout-block3, body.layout-band1, body.layout-block4) :is(#pitch, .step-control, #transpose, #keyboard-tools) {
+body.layout-block4 :is(#pitch, .step-control, #transpose, #keyboard-tools) {
   display: contents;
 }
 
 /* Einzelteile füllen ihre Zelle. */
-:is(body.layout-block1, body.layout-block2, body.layout-block3, body.layout-band1, body.layout-block4) :is(#tone-input, .step-control button, .tone-btn, .transpose-label, #keyboard-tools button) {
+body.layout-block4 :is(#tone-input, .step-control button, .tone-btn, .transpose-label, #keyboard-tools button) {
   width: 100%;
   height: 100%;
   min-width: 0;
@@ -469,113 +367,9 @@ body.layout-band-gruppe #app {
   box-sizing: border-box;
 }
 
-:is(body.layout-block1, body.layout-block2, body.layout-block3, body.layout-band1, body.layout-block4) .transpose-label {
+body.layout-block4 .transpose-label {
   background: #eee;
 }
-
-/* --- Variante "block1" (L1.3): Block oben rechts: Instrument/Stimmung über Sustain/Release, Stimmton und Transposition als Spalten, Tastenbereich unter Fullscreen. --- */
-body.layout-block1 #app {
-  grid-template-columns: minmax(0, 51.8fr) minmax(0, 10.8fr) minmax(0, 10.8fr) minmax(0, 5.9fr) minmax(0, 6fr) minmax(0, 4.9fr) minmax(0, 4.9fr) minmax(0, 4.9fr);
-  grid-template-rows: minmax(0, 12.7fr) minmax(0, 5.3fr) minmax(0, 7.4fr) minmax(0, 12.7fr) minmax(0, 61.9fr);
-  grid-template-areas: none;
-}
-body.layout-block1 #keyboard { grid-area: 5 / 1 / 6 / 9; }
-body.layout-block1 #harmony-keyboard { grid-area: 1 / 1 / 5 / 2; }
-body.layout-block1 #instrument { grid-area: 1 / 2 / 3 / 3; }
-body.layout-block1 #tuning { grid-area: 1 / 3 / 3 / 4; }
-body.layout-block1 #btn-sustain { grid-area: 3 / 2 / 5 / 3; }
-body.layout-block1 #btn-release { grid-area: 3 / 3 / 5 / 4; }
-body.layout-block1 #btn-pitch-up { grid-area: 1 / 4 / 2 / 5; }
-body.layout-block1 #tone-input { grid-area: 2 / 4 / 4 / 5; }
-body.layout-block1 #btn-pitch-down { grid-area: 4 / 4 / 5 / 5; }
-body.layout-block1 #btn-trans-up { grid-area: 1 / 5 / 2 / 6; }
-body.layout-block1 .transpose-label { grid-area: 2 / 5 / 4 / 6; }
-body.layout-block1 #btn-trans-down { grid-area: 4 / 5 / 5 / 6; }
-body.layout-block1 #fullscreen-toggle { grid-area: 1 / 6 / 2 / 9; }
-body.layout-block1 #keyboard-tools [data-action="semiDown"] { grid-area: 2 / 6 / 4 / 7; }
-body.layout-block1 #keyboard-tools [data-action="semiUp"] { grid-area: 2 / 7 / 4 / 8; }
-body.layout-block1 #keyboard-tools [data-action="decKeys"] { grid-area: 2 / 8 / 4 / 9; }
-body.layout-block1 #keyboard-tools [data-action="octDown"] { grid-area: 4 / 6 / 5 / 7; }
-body.layout-block1 #keyboard-tools [data-action="octUp"] { grid-area: 4 / 7 / 5 / 8; }
-body.layout-block1 #keyboard-tools [data-action="incKeys"] { grid-area: 4 / 8 / 5 / 9; }
-
-/* --- Variante "block2" (L1.3): wie block1, Stimmung breit über Sustain/Release, Instrument und Fullscreen über dem Tastenbereich. --- */
-body.layout-block2 #app {
-  grid-template-columns: minmax(0, 52fr) minmax(0, 9.6fr) minmax(0, 8fr) minmax(0, 5.9fr) minmax(0, 6fr) minmax(0, 6.17fr) minmax(0, 3.63fr) minmax(0, 2.53fr) minmax(0, 6.17fr);
-  grid-template-rows: minmax(0, 12.7fr) minmax(0, 12.7fr) minmax(0, 12.7fr) minmax(0, 61.9fr);
-  grid-template-areas: none;
-}
-body.layout-block2 #keyboard { grid-area: 4 / 1 / 5 / 10; }
-body.layout-block2 #harmony-keyboard { grid-area: 1 / 1 / 4 / 2; }
-body.layout-block2 #tuning { grid-area: 1 / 2 / 2 / 4; }
-body.layout-block2 #btn-sustain { grid-area: 2 / 2 / 4 / 3; }
-body.layout-block2 #btn-release { grid-area: 2 / 3 / 4 / 4; }
-body.layout-block2 #btn-pitch-up { grid-area: 1 / 4 / 2 / 5; }
-body.layout-block2 #tone-input { grid-area: 2 / 4 / 3 / 5; }
-body.layout-block2 #btn-pitch-down { grid-area: 3 / 4 / 4 / 5; }
-body.layout-block2 #btn-trans-up { grid-area: 1 / 5 / 2 / 6; }
-body.layout-block2 .transpose-label { grid-area: 2 / 5 / 3 / 6; }
-body.layout-block2 #btn-trans-down { grid-area: 3 / 5 / 4 / 6; }
-body.layout-block2 #instrument { grid-area: 1 / 6 / 2 / 8; }
-body.layout-block2 #fullscreen-toggle { grid-area: 1 / 8 / 2 / 10; }
-body.layout-block2 #keyboard-tools [data-action="semiDown"] { grid-area: 2 / 6 / 3 / 7; }
-body.layout-block2 #keyboard-tools [data-action="semiUp"] { grid-area: 2 / 7 / 3 / 9; }
-body.layout-block2 #keyboard-tools [data-action="decKeys"] { grid-area: 2 / 9 / 3 / 10; }
-body.layout-block2 #keyboard-tools [data-action="octDown"] { grid-area: 3 / 6 / 4 / 7; }
-body.layout-block2 #keyboard-tools [data-action="octUp"] { grid-area: 3 / 7 / 4 / 9; }
-body.layout-block2 #keyboard-tools [data-action="incKeys"] { grid-area: 3 / 9 / 4 / 10; }
-
-/* --- Variante "block3" (L1.3): für Tablet 1280×800 entworfen: Stimmung, Sustain, Release untereinander, Tastenbereich als drei Zeilen. --- */
-body.layout-block3 #app {
-  grid-template-columns: minmax(0, 50.2fr) minmax(0, 11.7fr) minmax(0, 11.1fr) minmax(0, 11.1fr) minmax(0, 7.95fr) minmax(0, 7.95fr);
-  grid-template-rows: minmax(0, 11fr) minmax(0, 10.1fr) minmax(0, 2.6fr) minmax(0, 2.6fr) minmax(0, 10.1fr) minmax(0, 63.6fr);
-  grid-template-areas: none;
-}
-body.layout-block3 #keyboard { grid-area: 6 / 1 / 7 / 7; }
-body.layout-block3 #harmony-keyboard { grid-area: 1 / 1 / 6 / 2; }
-body.layout-block3 #tuning { grid-area: 1 / 2 / 2 / 3; }
-body.layout-block3 #btn-sustain { grid-area: 2 / 2 / 4 / 3; }
-body.layout-block3 #btn-release { grid-area: 4 / 2 / 6 / 3; }
-body.layout-block3 #instrument { grid-area: 1 / 3 / 2 / 4; }
-body.layout-block3 #fullscreen-toggle { grid-area: 1 / 4 / 2 / 5; }
-body.layout-block3 #btn-pitch-up { grid-area: 2 / 3 / 3 / 4; }
-body.layout-block3 #tone-input { grid-area: 3 / 3 / 5 / 4; }
-body.layout-block3 #btn-pitch-down { grid-area: 5 / 3 / 6 / 4; }
-body.layout-block3 #btn-trans-up { grid-area: 2 / 4 / 3 / 5; }
-body.layout-block3 .transpose-label { grid-area: 3 / 4 / 5 / 5; }
-body.layout-block3 #btn-trans-down { grid-area: 5 / 4 / 6 / 5; }
-body.layout-block3 #keyboard-tools [data-action="decKeys"] { grid-area: 1 / 5 / 2 / 6; }
-body.layout-block3 #keyboard-tools [data-action="incKeys"] { grid-area: 1 / 6 / 2 / 7; }
-body.layout-block3 #keyboard-tools [data-action="octDown"] { grid-area: 2 / 5 / 4 / 6; }
-body.layout-block3 #keyboard-tools [data-action="octUp"] { grid-area: 2 / 6 / 4 / 7; }
-body.layout-block3 #keyboard-tools [data-action="semiDown"] { grid-area: 4 / 5 / 6 / 6; }
-body.layout-block3 #keyboard-tools [data-action="semiUp"] { grid-area: 4 / 6 / 6 / 7; }
-
-/* --- Variante "band1" (L1.3): oben eine Zeile mit allen Einstellungen, darunter Harmonieklaviatur | Sustain | Release | Tastenbereich. --- */
-body.layout-band1 #app {
-  grid-template-columns: minmax(0, 14fr) minmax(0, 12fr) minmax(0, 11fr) minmax(0, 6fr) minmax(0, 11fr) minmax(0, 11.35fr) minmax(0, 7.4fr) minmax(0, 5.05fr) minmax(0, 6.3fr) minmax(0, 4.8fr) minmax(0, 11.1fr);
-  grid-template-rows: minmax(0, 9.6fr) minmax(0, 12.13fr) minmax(0, 12.14fr) minmax(0, 12.13fr) minmax(0, 54fr);
-  grid-template-areas: none;
-}
-body.layout-band1 #keyboard { grid-area: 5 / 1 / 6 / 12; }
-body.layout-band1 #tuning { grid-area: 1 / 1 / 2 / 2; }
-body.layout-band1 #instrument { grid-area: 1 / 2 / 2 / 3; }
-body.layout-band1 #btn-pitch-down { grid-area: 1 / 3 / 2 / 4; }
-body.layout-band1 #tone-input { grid-area: 1 / 4 / 2 / 5; }
-body.layout-band1 #btn-pitch-up { grid-area: 1 / 5 / 2 / 6; }
-body.layout-band1 #btn-trans-down { grid-area: 1 / 6 / 2 / 7; }
-body.layout-band1 .transpose-label { grid-area: 1 / 7 / 2 / 8; }
-body.layout-band1 #btn-trans-up { grid-area: 1 / 8 / 2 / 10; }
-body.layout-band1 #fullscreen-toggle { grid-area: 1 / 10 / 2 / 12; }
-body.layout-band1 #harmony-keyboard { grid-area: 2 / 1 / 5 / 6; }
-body.layout-band1 #btn-sustain { grid-area: 2 / 6 / 5 / 7; }
-body.layout-band1 #btn-release { grid-area: 2 / 7 / 5 / 9; }
-body.layout-band1 #keyboard-tools [data-action="decKeys"] { grid-area: 2 / 9 / 3 / 11; }
-body.layout-band1 #keyboard-tools [data-action="incKeys"] { grid-area: 2 / 11 / 3 / 12; }
-body.layout-band1 #keyboard-tools [data-action="octDown"] { grid-area: 3 / 9 / 4 / 11; }
-body.layout-band1 #keyboard-tools [data-action="octUp"] { grid-area: 3 / 11 / 4 / 12; }
-body.layout-band1 #keyboard-tools [data-action="semiDown"] { grid-area: 4 / 9 / 5 / 11; }
-body.layout-band1 #keyboard-tools [data-action="semiUp"] { grid-area: 4 / 11 / 5 / 12; }
 
 /* --- Variante "block4" (L1.5): Release/Sustain am linken Rand, Stimmung und Instrument über der Harmonieklaviatur, rechts Tastenbereich, Transposition, Stimmton als Spalten, Fullscreen oben rechts. --- */
 body.layout-block4 #app {

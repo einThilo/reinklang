@@ -18,10 +18,10 @@ import { VERSION } from "./version.js";
 const options = readOptions(location.search);
 
 // Layout-Varianten: ?layout=<name> setzt die Klasse layout-<name> am <body>
-// (Regeln dazu in css/style.css). Ohne Zusatz oder bei unbekanntem Namen gilt DEFAULT_LAYOUT;
-// ?layout=alt zeigt die frühere Vorgabe (keine Layout-Klasse).
+// (Regeln dazu in css/style.css). Ohne Zusatz oder bei unbekanntem Namen gilt DEFAULT_LAYOUT.
+// Neue Varianten zum Testen kommen in LAYOUTS dazu (L1).
 const DEFAULT_LAYOUT = "block4";
-const LAYOUTS = ["band", "band-unten", "ecke", "ecken", "klassisch-2", "band-gruppe", "block1", "block2", "block3", "band1", "block4"];
+const LAYOUTS = ["block4"];
 
 document.addEventListener("DOMContentLoaded", init);
 
@@ -584,7 +584,6 @@ function setupDeviation(harmonyKeyboard) {
 // Layout-Variante aus der Adresse.
 function setupLayout() {
   const name = new URLSearchParams(location.search).get("layout");
-  if (name === "alt") return;
   const chosen = LAYOUTS.includes(name) ? name : DEFAULT_LAYOUT;
   document.body.classList.add(`layout-${chosen}`);
 }
