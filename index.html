@@ -67,6 +67,15 @@
     <p class="tuning-editor-hint">Haus antippen, um seinen Ton zu ändern</p>
     <button id="tuning-editor-done" type="button">Fertig</button>
   </div>
+  <!-- Z3.4: Intervall-Liste für den gewählten Grad, überdeckt Harmonieklaviatur, Instrument, Stimmung und das
+       Anpass-Feld; rechts ein ausgegrauter Streifen mit ✕ und dem Cent-Feld. Die Einträge setzt tuningeditor.js. -->
+  <div id="interval-list" hidden></div>
+  <div id="interval-strip" hidden>
+    <button id="interval-close" type="button" title="Liste schließen">✕</button>
+    <span id="interval-degree"></span>
+    <input type="number" id="interval-cents" step="0.01" aria-label="Cent">
+    <span class="interval-unit">ct</span>
+  </div>
 
   <div id="keyboard"></div>
 </div>

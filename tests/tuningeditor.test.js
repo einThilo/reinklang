@@ -25,3 +25,17 @@ test("degreeOf: Grad zum Grundton, auch unterhalb und über mehrere Oktaven", ()
   assert.equal(degreeOf(62, 67), 7);
   assert.equal(degreeOf(84, 60), 0);
 });
+
+import { degreeCents, sameIntervalIndex } from "../js/tuningeditor.js";
+import { INTERVALS } from "../js/intervals.js";
+
+test("degreeCents: Cent eines Grads", () => {
+  assert.ok(Math.abs(degreeCents(TUNINGS.thilo, 7) - 1200 * Math.log2(3 / 2)) < 1e-9);
+  assert.ok(Math.abs(degreeCents(TUNINGS.equal, 4) - 400) < 1e-9);
+});
+
+test("sameIntervalIndex: nur ein gleich hoher Eintrag zählt", () => {
+  const fifth = sameIntervalIndex(INTERVALS, 1200 * Math.log2(3 / 2));
+  assert.equal(INTERVALS[fifth].value, "3/2");
+  assert.equal(sameIntervalIndex(INTERVALS, 701.5), -1);
+});

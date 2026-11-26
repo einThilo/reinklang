@@ -78,7 +78,9 @@ function init() {
   setupKeyboardRange(mainKeyboard);
   const tuningEditor = setupTuningEditor({
     harmonyKeyboard,
-    panel: document.getElementById("tuning-editor")
+    panel: document.getElementById("tuning-editor"),
+    list: document.getElementById("interval-list"),
+    strip: document.getElementById("interval-strip")
   });
   setupHarmony(harmonyKeyboard, updateRootHighlight, tuningEditor);
   setupInstrument(audioEngine);

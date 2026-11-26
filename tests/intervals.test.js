@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { INTERVALS, EDOS, buildIntervals, formatInterval, nearestIntervalIndex } from "../js/intervals.js";
+import { INTERVALS, EDOS, buildIntervals, formatInterval, formatIntervalCents, nearestIntervalIndex } from "../js/intervals.js";
 import { TUNINGS } from "../js/tuning.js";
 
 test("die Liste ist nach Cent aufsteigend sortiert und reicht von 1/1 bis 2/1", () => {
@@ -67,4 +67,9 @@ test("nächstliegender Eintrag zu einem Wert", () => {
   assert.equal(nearestIntervalIndex(list, "400.0"), 1);
   assert.equal(nearestIntervalIndex(list, "480.0"), 2);
   assert.equal(nearestIntervalIndex(list, "x"), -1);
+});
+
+test("formatIntervalCents: Cent und Abweichung zur nächsten 12-EDO-Stufe", () => {
+  assert.equal(formatIntervalCents({ value: "5/4", cents: 386.3137, names: [] }), "386.31 ct (−14)");
+  assert.equal(formatIntervalCents({ value: "700.00", cents: 700, names: [] }), "700.00 ct (0)");
 });

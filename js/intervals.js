@@ -366,8 +366,13 @@ export const INTERVALS = buildIntervals(WIKIPEDIA_LINES, EDOS);
 // Text eines Eintrags: `5/4 · Just major third · 386.31 ct (−14)`; die Klammer ist die Abweichung zur nächsten
 // 12-EDO-Stufe, mehrere Namen stehen durch „ / “ getrennt.
 export function formatInterval(entry) {
+  return `${entry.value} · ${entry.names.join(" / ")} · ${formatIntervalCents(entry)}`;
+}
+
+// Cent eines Eintrags mit der Abweichung zur nächsten 12-EDO-Stufe: `386.31 ct (−14)`.
+export function formatIntervalCents(entry) {
   const deviation = entry.cents - 100 * Math.round(entry.cents / 100);
-  return `${entry.value} · ${entry.names.join(" / ")} · ${entry.cents.toFixed(2)} ct (${formatCents(deviation)})`;
+  return `${entry.cents.toFixed(2)} ct (${formatCents(deviation)})`;
 }
 
 // Stelle des Eintrags, der einem Wert (Verhältnis oder Cent-Wert als Text) am nächsten liegt, oder −1, wenn
